@@ -56,8 +56,8 @@ $payments = $stmt->get_result();
         <div class="invoice-details">
             <div class="invoice-header">
                 <div class="company-info">
-                    <h2>Your Company Name</h2>
-                    <p>123 Business Street<br>City, State 12345<br>Phone: (555) 123-4567<br>Email: info@company.com</p>
+                    <h2>Ozbix IT Solutions</h2>
+                    <p>Soldier Bazaar Garden East<br>Karachi, Sindh 74600<br>Phone: +92 213 2226060<br>Email: info@ozbix.com</p>
                 </div>
                 <div class="invoice-info">
                     <h3>INVOICE</h3>
