@@ -76,11 +76,14 @@ $total = $stmt->get_result()->fetch_assoc()['total'];
 $total_pages = ceil($total / $limit);
 
 // Get projects
-$sql = "SELECT p.*, c.name as client_name 
-        FROM projects p 
-        JOIN clients c ON p.client_id = c.id 
-        $where_clause 
-        ORDER BY p.created_at DESC 
+$sql = "SELECT p.*, 
+               c.name as client_name,
+               i.payment_status
+        FROM projects p
+        JOIN clients c ON p.client_id = c.id
+        LEFT JOIN invoices i ON i.project_id = p.id
+        $where_clause
+        ORDER BY p.created_at DESC
         LIMIT $offset, $limit";
 $stmt = $db->prepare($sql);
 if ($params) {

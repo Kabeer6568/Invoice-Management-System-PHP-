@@ -9,6 +9,10 @@ body {
     background: #f5f5f5;
 }
 
+.mrtb{
+    margin: 2% 0;
+}
+
 /* Login Page */
 .login-page {
     display: flex;
@@ -101,7 +105,7 @@ body {
 }
 
 .stat-value {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: bold;
     color: #A81E2A;
 }
@@ -125,12 +129,13 @@ body {
     padding: 12px;
     text-align: left;
     font-weight: 600;
+    font-size: 14px;
 }
 
 .data-table td {
     padding: 12px;
     border-top: 1px solid #dee2e6;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 /* Status Badges */

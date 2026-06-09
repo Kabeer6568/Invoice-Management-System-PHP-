@@ -64,7 +64,7 @@ $recent_projects = $db->query("SELECT p.*, c.name as client_name
 <body>
     <?php include 'includes/header.php'; ?>
     <div class="container">
-        <h1>Dashboard</h1>
+        <h1 class="mrtb">Dashboard</h1>
         
         <div class="stats-grid">
             <div class="stat-card">
@@ -95,7 +95,7 @@ $recent_projects = $db->query("SELECT p.*, c.name as client_name
         
         <div class="activity-grid">
             <div class="activity-section">
-                <h2>Recent Invoices</h2>
+                <h2 class="mrtb">Recent Invoices</h2>
                 <table class="data-table">
                     <thead>
                         <tr><th>Invoice #</th><th>Client</th><th>Amount</th><th>Status</th></tr>
@@ -114,7 +114,7 @@ $recent_projects = $db->query("SELECT p.*, c.name as client_name
             </div>
             
             <div class="activity-section">
-                <h2>Recent Projects</h2>
+                <h2 class="mrtb">Recent Projects</h2>
                 <table class="data-table">
                     <thead>
                         <tr><th>Project Name</th><th>Client</th><th>Status</th></tr>
