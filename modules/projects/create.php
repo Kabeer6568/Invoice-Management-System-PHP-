@@ -3,14 +3,14 @@ require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../includes/csrf.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/createClientInvoice.php';
 redirectIfNotLoggedIn();
 
 $error   = '';
 $success = '';
 
-// Get clients for dropdown
-$clients          = $db->query("SELECT id, name, company FROM clients ORDER BY name");
-$selected_client  = isset($_GET['client']) ? (int)$_GET['client'] : 0;
+$clients         = $db->query("SELECT id, name, company FROM clients ORDER BY name");
+$selected_client = isset($_GET['client']) ? (int)$_GET['client'] : 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCSRFToken($_POST['csrf_token']);
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->bind_param(
-            "isssssssddds",
+            'isssssssddds',
             $client_id, $project_name, $description, $department, $project_type,
             $status, $payment_status, $start_date, $end_date, $cost, $monthly_fee, $notes
         );
@@ -49,53 +49,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $project_id = $db->insert_id;
             logActivity($_SESSION['admin_id'], 'CREATE_PROJECT', "Created project: $project_name (ID: $project_id)");
 
-            // ── 2. Auto-create invoice based on project type ──────────────────
-            $invoice_amount = ($project_type === 'Monthly') ? $monthly_fee : $cost;
+            // ── 2. Auto-create combined invoice for this client ───────────────
+            // Only passes the new project ID — unpaid balance is added automatically
+            $result = createClientInvoice($db, $client_id, [$project_id]);
 
-            if ($invoice_amount > 0) {
-                $invoice_number   = generateInvoiceNumber();
-                $invoice_date     = date('Y-m-d');
-                $due_date         = date('Y-m-d', strtotime('+30 days'));
-                $tax              = 0.00;
-                $discount         = 0.00;
-                $total            = $invoice_amount;
-                $remaining_amount = $total;
-                $month_label      = date('F Y');
-
-                $invoice_notes = $project_type === 'Monthly'
-                    ? "Auto-generated monthly invoice for $project_name — $month_label."
-                    : "Auto-generated invoice for $project_name.";
-
-                $inv_stmt = $db->prepare("
-                    INSERT INTO invoices
-                        (invoice_number, client_id, project_id, invoice_date, due_date,
-                         amount, tax, discount, total, paid_amount, remaining_amount, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-                ");
-                $inv_stmt->bind_param(
-                    "siissddddds",
-                    $invoice_number, $client_id, $project_id, $invoice_date, $due_date,
-                    $invoice_amount, $tax, $discount, $total, $remaining_amount, $invoice_notes
-                );
-
-                if ($inv_stmt->execute()) {
-                    $invoice_id = $db->insert_id;
-                    updateInvoiceStatus($invoice_id);
-                    logActivity($_SESSION['admin_id'], 'CREATE_INVOICE', "Auto-created invoice: $invoice_number for project: $project_name (ID: $invoice_id)");
-                    $success = "Project and invoice created successfully! Invoice: $invoice_number";
-                } else {
-                    // Project was saved, invoice failed — still show partial success
-                    $success = "Project created but invoice generation failed: " . $db->error;
-                }
-                $inv_stmt->close();
-
+            if ($result['success']) {
+                logActivity($_SESSION['admin_id'], 'CREATE_INVOICE', "Auto-created invoice: {$result['invoice_number']} for project: $project_name");
+                $success = "Project created! " . $result['message'];
             } else {
-                // No amount set — project saved, invoice skipped
-                $success = "Project created successfully! (No invoice generated — amount is 0)";
+                $success = "Project created! (Invoice skipped: " . $result['message'] . ")";
             }
 
             $_POST = [];
-
         } else {
             $error = "Error creating project: " . $db->error;
         }
@@ -208,13 +173,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="form-row">
-                <!-- One-time cost: shown for One-time projects -->
                 <div class="form-group" id="cost_group">
                     <label>One-time Cost</label>
                     <input type="number" step="0.01" name="cost" value="0.00">
                 </div>
 
-                <!-- Monthly fee: shown for Monthly projects -->
                 <div class="form-group" id="monthly_group">
                     <label>Monthly Fee</label>
                     <input type="number" step="0.01" name="monthly_fee" value="0.00">
@@ -251,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         projectType.addEventListener('change', toggleCostFields);
-        toggleCostFields(); // run on page load
+        toggleCostFields();
     </script>
 </body>
 </html>

@@ -75,6 +75,17 @@ CREATE TABLE invoices (
     INDEX idx_invoice_date (invoice_date)
 );
 
+-- Invoice Items Table
+CREATE TABLE IF NOT EXISTS invoice_items (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    invoice_id  INT            NOT NULL,
+    project_id  INT            DEFAULT NULL,       -- NULL for carried-over balance row
+    description VARCHAR(255)   NOT NULL,
+    amount      DECIMAL(10,2)  NOT NULL DEFAULT 0.00,
+    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+);
+
+
 -- Payments table
 CREATE TABLE payments (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -89,6 +100,7 @@ CREATE TABLE payments (
     INDEX idx_payment_invoice (invoice_id),
     INDEX idx_payment_date (payment_date)
 );
+
 
 -- Activity logs table
 CREATE TABLE activity_logs (
