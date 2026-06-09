@@ -1,3 +1,9 @@
+<?php
+
+require_once __DIR__ . '/cron_monthly_invoices.php';
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
