@@ -5,83 +5,140 @@ require_once '../../includes/functions.php';
 redirectIfNotLoggedIn();
 
 $selected_month = isset($_GET['month']) ? (int)$_GET['month'] : date('m');
-$selected_year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
-$report_type = isset($_GET['type']) ? $_GET['type'] : 'summary';
+$selected_year  = isset($_GET['year'])  ? (int)$_GET['year']  : date('Y');
+$report_type    = isset($_GET['type'])  ? $_GET['type']        : 'summary';
 
-// Get financial summary
-$stmt = $db->prepare("SELECT 
-    SUM(i.total) as total_invoiced,
-    SUM(i.paid_amount) as total_received,
-    SUM(i.remaining_amount) as remaining_balance,
-    COUNT(i.id) as invoice_count,
-    SUM(CASE WHEN i.payment_status = 'Paid' THEN 1 ELSE 0 END) as paid_count,
-    SUM(CASE WHEN i.payment_status = 'Partial' THEN 1 ELSE 0 END) as partial_count,
-    SUM(CASE WHEN i.payment_status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
-    SUM(CASE WHEN i.payment_status = 'Overdue' THEN 1 ELSE 0 END) as overdue_count
-    FROM invoices i
-    WHERE MONTH(i.invoice_date) = ? AND YEAR(i.invoice_date) = ?");
+// ── Flush overdue status before running any report queries ────────────────────
+// This ensures the report always reflects the true current state
+$db->query("
+    UPDATE invoices
+    SET    payment_status = 'Overdue'
+    WHERE  payment_status = 'Pending'
+      AND  due_date < CURDATE()
+      AND  paid_amount = 0
+");
+
+// ── All outstanding invoices (overdue + partial) across ALL months ────────────
+$outstanding = $db->query("
+    SELECT i.*, c.name AS client_name, c.company
+    FROM   invoices i
+    JOIN   clients  c ON i.client_id = c.id
+    WHERE  i.payment_status IN ('Overdue', 'Partial')
+    ORDER  BY i.payment_status ASC, i.due_date ASC
+");
+
+// ── Financial summary ─────────────────────────────────────────────────────────
+$stmt = $db->prepare("
+    SELECT
+        COALESCE(SUM(total), 0)                                              AS total_invoiced,
+        COALESCE(SUM(paid_amount), 0)                                        AS total_received,
+        COALESCE(SUM(remaining_amount), 0)                                   AS remaining_balance,
+        COUNT(id)                                                            AS invoice_count,
+        SUM(CASE WHEN payment_status = 'Paid'    THEN 1 ELSE 0 END)         AS paid_count,
+        SUM(CASE WHEN payment_status = 'Partial' THEN 1 ELSE 0 END)         AS partial_count,
+        SUM(CASE WHEN payment_status = 'Pending' THEN 1 ELSE 0 END)         AS pending_count,
+        SUM(CASE WHEN payment_status = 'Overdue' THEN 1 ELSE 0 END)         AS overdue_count
+    FROM invoices
+    WHERE MONTH(invoice_date) = ? AND YEAR(invoice_date) = ?
+");
 $stmt->bind_param("ii", $selected_month, $selected_year);
 $stmt->execute();
 $summary = $stmt->get_result()->fetch_assoc();
 
-// Client-wise breakdown
-$stmt = $db->prepare("SELECT 
-    c.id, c.name, c.company,
-    COUNT(i.id) as invoice_count,
-    SUM(i.total) as total_invoiced,
-    SUM(i.paid_amount) as total_paid,
-    SUM(i.remaining_amount) as balance
+// ── Client-wise breakdown ─────────────────────────────────────────────────────
+// Uses client_id join — works for both single-project and combined invoices
+$stmt = $db->prepare("
+    SELECT
+        c.id, c.name, c.company,
+        COUNT(i.id)              AS invoice_count,
+        COALESCE(SUM(i.total), 0)           AS total_invoiced,
+        COALESCE(SUM(i.paid_amount), 0)     AS total_paid,
+        COALESCE(SUM(i.remaining_amount),0) AS balance
     FROM clients c
-    LEFT JOIN invoices i ON c.id = i.client_id 
-        AND MONTH(i.invoice_date) = ? AND YEAR(i.invoice_date) = ?
+    LEFT JOIN invoices i ON c.id = i.client_id
+        AND MONTH(i.invoice_date) = ?
+        AND YEAR(i.invoice_date)  = ?
     GROUP BY c.id
-    HAVING invoice_count > 0 OR total_invoiced > 0
-    ORDER BY total_invoiced DESC");
+    HAVING invoice_count > 0
+    ORDER BY total_invoiced DESC
+");
 $stmt->bind_param("ii", $selected_month, $selected_year);
 $stmt->execute();
 $client_breakdown = $stmt->get_result();
 
-// Project-wise breakdown
-$stmt = $db->prepare("SELECT 
-    p.id, p.project_name, p.department,
-    COUNT(i.id) as invoice_count,
-    SUM(i.total) as total_invoiced,
-    SUM(i.paid_amount) as total_paid,
-    SUM(i.remaining_amount) as balance
+// ── Project-wise breakdown ────────────────────────────────────────────────────
+// For combined invoices (project_id NULL), we spread the invoice amount across
+// the client's active projects via invoice_items so nothing is lost
+$stmt = $db->prepare("
+    SELECT
+        p.id,
+        p.project_name,
+        p.department,
+        COUNT(DISTINCT ii.invoice_id)        AS invoice_count,
+        COALESCE(SUM(ii.amount), 0)          AS total_invoiced,
+        COALESCE(SUM(
+            ii.amount / NULLIF(inv_total.items_total, 0) * inv.paid_amount
+        ), 0)                                AS total_paid,
+        COALESCE(SUM(
+            ii.amount / NULLIF(inv_total.items_total, 0) * inv.remaining_amount
+        ), 0)                                AS balance
     FROM projects p
-    LEFT JOIN invoices i ON p.id = i.project_id 
-        AND MONTH(i.invoice_date) = ? AND YEAR(i.invoice_date) = ?
+    JOIN invoice_items ii ON ii.project_id = p.id
+    JOIN invoices inv     ON inv.id = ii.invoice_id
+        AND MONTH(inv.invoice_date) = ?
+        AND YEAR(inv.invoice_date)  = ?
+    -- get total items amount per invoice to calculate proportional paid/balance
+    JOIN (
+        SELECT invoice_id, SUM(amount) AS items_total
+        FROM   invoice_items
+        GROUP  BY invoice_id
+    ) inv_total ON inv_total.invoice_id = inv.id
     GROUP BY p.id
-    HAVING invoice_count > 0 OR total_invoiced > 0
     ORDER BY total_invoiced DESC
-    LIMIT 20");
+    LIMIT 20
+");
 $stmt->bind_param("ii", $selected_month, $selected_year);
 $stmt->execute();
 $project_breakdown = $stmt->get_result();
 
-// Monthly comparison (last 12 months)
-$comparison = $db->query("SELECT 
-    DATE_FORMAT(invoice_date, '%Y-%m') as month,
-    SUM(total) as total_invoiced,
-    SUM(paid_amount) as total_received
-    FROM invoices
-    WHERE invoice_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-    GROUP BY DATE_FORMAT(invoice_date, '%Y-%m')
-    ORDER BY month DESC");
-
-// Department-wise breakdown
-$stmt = $db->prepare("SELECT 
-    p.department,
-    COUNT(i.id) as invoice_count,
-    SUM(i.total) as total_invoiced,
-    SUM(i.paid_amount) as total_paid
+// ── Department-wise breakdown ─────────────────────────────────────────────────
+// Same approach — via invoice_items so combined invoices are included
+$stmt = $db->prepare("
+    SELECT
+        p.department,
+        COUNT(DISTINCT ii.invoice_id)        AS invoice_count,
+        COALESCE(SUM(ii.amount), 0)          AS total_invoiced,
+        COALESCE(SUM(
+            ii.amount / NULLIF(inv_total.items_total, 0) * inv.paid_amount
+        ), 0)                                AS total_paid
     FROM projects p
-    JOIN invoices i ON p.id = i.project_id
-    WHERE MONTH(i.invoice_date) = ? AND YEAR(i.invoice_date) = ?
-    GROUP BY p.department");
+    JOIN invoice_items ii ON ii.project_id = p.id
+    JOIN invoices inv     ON inv.id = ii.invoice_id
+        AND MONTH(inv.invoice_date) = ?
+        AND YEAR(inv.invoice_date)  = ?
+    JOIN (
+        SELECT invoice_id, SUM(amount) AS items_total
+        FROM   invoice_items
+        GROUP  BY invoice_id
+    ) inv_total ON inv_total.invoice_id = inv.id
+    GROUP BY p.department
+    ORDER BY total_invoiced DESC
+");
 $stmt->bind_param("ii", $selected_month, $selected_year);
 $stmt->execute();
 $department_breakdown = $stmt->get_result();
+
+// ── Last 12 months comparison ─────────────────────────────────────────────────
+$comparison = $db->query("
+    SELECT
+        DATE_FORMAT(invoice_date, '%Y-%m') AS month,
+        SUM(total)       AS total_invoiced,
+        SUM(paid_amount) AS total_received
+    FROM invoices
+    WHERE invoice_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+    GROUP BY DATE_FORMAT(invoice_date, '%Y-%m')
+    ORDER BY month DESC
+");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -96,83 +153,86 @@ $department_breakdown = $stmt->get_result();
     <div class="container">
         <div class="page-header">
             <h1>Financial Reports</h1>
-            <a href="export.php?month=<?php echo $selected_month; ?>&year=<?php echo $selected_year; ?>" class="btn-secondary">Export Report</a>
+            <a href="export.php?month=<?php echo $selected_month; ?>&year=<?php echo $selected_year; ?>"
+               class="btn-secondary">Export Report</a>
         </div>
-        
+
         <form method="GET" class="filter-form">
             <div class="filter-row">
                 <select name="month">
-                    <?php for($m = 1; $m <= 12; $m++): ?>
+                    <?php for ($m = 1; $m <= 12; $m++): ?>
                     <option value="<?php echo $m; ?>" <?php echo $selected_month == $m ? 'selected' : ''; ?>>
                         <?php echo date('F', mktime(0,0,0,$m,1)); ?>
                     </option>
                     <?php endfor; ?>
                 </select>
-                
+
                 <select name="year">
-                    <?php for($y = date('Y'); $y >= date('Y')-5; $y--): ?>
+                    <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
                     <option value="<?php echo $y; ?>" <?php echo $selected_year == $y ? 'selected' : ''; ?>>
                         <?php echo $y; ?>
                     </option>
                     <?php endfor; ?>
                 </select>
-                
+
                 <select name="type">
-                    <option value="summary" <?php echo $report_type == 'summary' ? 'selected' : ''; ?>>Summary Report</option>
+                    <option value="summary"  <?php echo $report_type == 'summary'  ? 'selected' : ''; ?>>Summary Report</option>
                     <option value="detailed" <?php echo $report_type == 'detailed' ? 'selected' : ''; ?>>Detailed Report</option>
                 </select>
-                
+
                 <button type="submit">Generate Report</button>
             </div>
         </form>
-        
+
         <div class="report-header">
             <h2>Financial Report for <?php echo date('F Y', mktime(0,0,0,$selected_month,1,$selected_year)); ?></h2>
         </div>
+
         
+
         <!-- Summary Cards -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value">Rs.<?php echo number_format($summary['total_invoiced'] ?? 0, 2); ?></div>
+                <div class="stat-value">Rs.<?php echo number_format($summary['total_invoiced'], 2); ?></div>
                 <div class="stat-label">Total Invoiced</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">Rs.<?php echo number_format($summary['total_received'] ?? 0, 2); ?></div>
+                <div class="stat-value">Rs.<?php echo number_format($summary['total_received'], 2); ?></div>
                 <div class="stat-label">Total Received</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">Rs.<?php echo number_format($summary['remaining_balance'] ?? 0, 2); ?></div>
+                <div class="stat-value">Rs.<?php echo number_format($summary['remaining_balance'], 2); ?></div>
                 <div class="stat-label">Remaining Balance</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value"><?php echo $summary['invoice_count'] ?? 0; ?></div>
+                <div class="stat-value"><?php echo $summary['invoice_count']; ?></div>
                 <div class="stat-label">Total Invoices</div>
             </div>
         </div>
-        
+
         <!-- Status Breakdown -->
         <div class="breakdown-section">
             <h3>Payment Status Breakdown</h3>
             <div class="status-breakdown">
                 <div class="status-item">
                     <span class="status-label status-paid">Paid:</span>
-                    <span class="status-value"><?php echo $summary['paid_count'] ?? 0; ?> invoices</span>
+                    <span class="status-value"><?php echo $summary['paid_count']; ?> invoices</span>
                 </div>
                 <div class="status-item">
                     <span class="status-label status-partial">Partial:</span>
-                    <span class="status-value"><?php echo $summary['partial_count'] ?? 0; ?> invoices</span>
+                    <span class="status-value"><?php echo $summary['partial_count']; ?> invoices</span>
                 </div>
                 <div class="status-item">
                     <span class="status-label status-pending">Pending:</span>
-                    <span class="status-value"><?php echo $summary['pending_count'] ?? 0; ?> invoices</span>
+                    <span class="status-value"><?php echo $summary['pending_count']; ?> invoices</span>
                 </div>
                 <div class="status-item">
                     <span class="status-label status-overdue">Overdue:</span>
-                    <span class="status-value"><?php echo $summary['overdue_count'] ?? 0; ?> invoices</span>
+                    <span class="status-value"><?php echo $summary['overdue_count']; ?> invoices</span>
                 </div>
             </div>
         </div>
-        
+
         <!-- Client-wise Breakdown -->
         <div class="breakdown-section">
             <h3>Client-wise Breakdown</h3>
@@ -188,26 +248,24 @@ $department_breakdown = $stmt->get_result();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if($client_breakdown->num_rows > 0): ?>
-                    <?php while($client = $client_breakdown->fetch_assoc()): ?>
-                    <tr>
-                        <td><?php echo escape($client['name']); ?></td>
-                        <td><?php echo escape($client['company']); ?></td>
-                        <td><?php echo $client['invoice_count']; ?></td>
-                        <td>Rs.<?php echo number_format($client['total_invoiced'] ?? 0, 2); ?></td>
-                        <td>Rs.<?php echo number_format($client['total_paid'] ?? 0, 2); ?></td>
-                        <td>Rs.<?php echo number_format($client['balance'] ?? 0, 2); ?></td>
-                    </tr>
-                    <?php endwhile; ?>
+                    <?php if ($client_breakdown->num_rows > 0): ?>
+                        <?php while ($client = $client_breakdown->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo escape($client['name']); ?></td>
+                            <td><?php echo escape($client['company']); ?></td>
+                            <td><?php echo $client['invoice_count']; ?></td>
+                            <td>Rs.<?php echo number_format($client['total_invoiced'], 2); ?></td>
+                            <td>Rs.<?php echo number_format($client['total_paid'], 2); ?></td>
+                            <td>Rs.<?php echo number_format($client['balance'], 2); ?></td>
+                        </tr>
+                        <?php endwhile; ?>
                     <?php else: ?>
-                    <tr>
-                        <td colspan="6" class="text-center">No invoice data for this period</td>
-                    </tr>
+                        <tr><td colspan="6" class="text-center">No invoice data for this period</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Project-wise Breakdown -->
         <div class="breakdown-section">
             <h3>Project-wise Breakdown (Top 20)</h3>
@@ -223,20 +281,24 @@ $department_breakdown = $stmt->get_result();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while($project = $project_breakdown->fetch_assoc()): ?>
-                    <tr>
-                        <td><?php echo escape($project['project_name']); ?></td>
-                        <td><?php echo escape($project['department']); ?></td>
-                        <td><?php echo $project['invoice_count']; ?></td>
-                        <td>Rs.<?php echo number_format($project['total_invoiced'] ?? 0, 2); ?></td>
-                        <td>Rs.<?php echo number_format($project['total_paid'] ?? 0, 2); ?></td>
-                        <td>Rs.<?php echo number_format($project['balance'] ?? 0, 2); ?></td>
-                    </tr>
-                    <?php endwhile; ?>
+                    <?php if ($project_breakdown->num_rows > 0): ?>
+                        <?php while ($project = $project_breakdown->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo escape($project['project_name']); ?></td>
+                            <td><?php echo escape($project['department']); ?></td>
+                            <td><?php echo $project['invoice_count']; ?></td>
+                            <td>Rs.<?php echo number_format($project['total_invoiced'], 2); ?></td>
+                            <td>Rs.<?php echo number_format($project['total_paid'], 2); ?></td>
+                            <td>Rs.<?php echo number_format($project['balance'], 2); ?></td>
+                        </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr><td colspan="6" class="text-center">No project data for this period</td></tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Department-wise Breakdown -->
         <div class="breakdown-section">
             <h3>Department-wise Breakdown</h3>
@@ -251,21 +313,91 @@ $department_breakdown = $stmt->get_result();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while($dept = $department_breakdown->fetch_assoc()): 
-                        $rate = $dept['total_invoiced'] > 0 ? ($dept['total_paid'] / $dept['total_invoiced']) * 100 : 0;
-                    ?>
-                    <tr>
-                        <td><?php echo escape($dept['department']); ?></td>
-                        <td><?php echo $dept['invoice_count']; ?></td>
-                        <td>Rs.<?php echo number_format($dept['total_invoiced'], 2); ?></td>
-                        <td>Rs.<?php echo number_format($dept['total_paid'], 2); ?></td>
-                        <td><?php echo number_format($rate, 1); ?>%</td>
-                    </tr>
-                    <?php endwhile; ?>
+                    <?php if ($department_breakdown->num_rows > 0): ?>
+                        <?php while ($dept = $department_breakdown->fetch_assoc()):
+                            $rate = $dept['total_invoiced'] > 0
+                                ? ($dept['total_paid'] / $dept['total_invoiced']) * 100
+                                : 0;
+                        ?>
+                        <tr>
+                            <td><?php echo escape($dept['department']); ?></td>
+                            <td><?php echo $dept['invoice_count']; ?></td>
+                            <td>Rs.<?php echo number_format($dept['total_invoiced'], 2); ?></td>
+                            <td>Rs.<?php echo number_format($dept['total_paid'], 2); ?></td>
+                            <td><?php echo number_format($rate, 1); ?>%</td>
+                        </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr><td colspan="5" class="text-center">No department data for this period</td></tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
-        
+
+
+        <!-- ── Outstanding Balances (all months) ── -->
+        <?php if ($outstanding->num_rows > 0): ?>
+        <div class="breakdown-section" style="border-left: 4px solid #e74c3c; padding-left: 16px;">
+            <h3 style="color:#e74c3c;">
+                ⚠ Outstanding Balances — All Months
+                <small style="font-size:13px; font-weight:400; color:#888; margin-left:8px;">
+                    (<?php echo $outstanding->num_rows; ?> invoice<?php echo $outstanding->num_rows > 1 ? 's' : ''; ?>)
+                </small>
+            </h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Client</th>
+                        <th>Invoice Date</th>
+                        <th>Due Date</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($ov = $outstanding->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo escape($ov['invoice_number']); ?></td>
+                        <td><?php echo escape($ov['client_name']); ?><br>
+                            <small style="color:#888;"><?php echo escape($ov['company']); ?></small>
+                        </td>
+                        <td><?php echo date('d M Y', strtotime($ov['invoice_date'])); ?></td>
+                        <td><?php echo date('d M Y', strtotime($ov['due_date'])); ?></td>
+                        <td>Rs.<?php echo number_format($ov['total'], 2); ?></td>
+                        <td>Rs.<?php echo number_format($ov['paid_amount'], 2); ?></td>
+                        <td><strong>Rs.<?php echo number_format($ov['remaining_amount'], 2); ?></strong></td>
+                        <td><span class="status-<?php echo strtolower($ov['payment_status']); ?>"><?php echo $ov['payment_status']; ?></span></td>
+                        <td><a href="../invoices/view.php?id=<?php echo $ov['id']; ?>">View</a></td>
+                    </tr>
+                    <?php endwhile; ?>
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight:700; background:#fff5f5;">
+                        <?php
+                            // Rerun query for totals since we already looped above
+                            $totals = $db->query("
+                                SELECT COALESCE(SUM(total),0)            AS grand_total,
+                                       COALESCE(SUM(paid_amount),0)      AS grand_paid,
+                                       COALESCE(SUM(remaining_amount),0) AS grand_balance
+                                FROM   invoices
+                                WHERE  payment_status IN ('Overdue','Partial')
+                            ")->fetch_assoc();
+                        ?>
+                        <td colspan="4" style="text-align:right;">Totals:</td>
+                        <td>Rs.<?php echo number_format($totals['grand_total'], 2); ?></td>
+                        <td>Rs.<?php echo number_format($totals['grand_paid'], 2); ?></td>
+                        <td>Rs.<?php echo number_format($totals['grand_balance'], 2); ?></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <?php endif; ?>
+
         <!-- Monthly Comparison -->
         <div class="breakdown-section">
             <h3>Last 12 Months Comparison</h3>
@@ -279,8 +411,10 @@ $department_breakdown = $stmt->get_result();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while($comp = $comparison->fetch_assoc()): 
-                        $rate = $comp['total_invoiced'] > 0 ? ($comp['total_received'] / $comp['total_invoiced']) * 100 : 0;
+                    <?php while ($comp = $comparison->fetch_assoc()):
+                        $rate = $comp['total_invoiced'] > 0
+                            ? ($comp['total_received'] / $comp['total_invoiced']) * 100
+                            : 0;
                     ?>
                     <tr>
                         <td><?php echo date('F Y', strtotime($comp['month'] . '-01')); ?></td>
@@ -292,6 +426,7 @@ $department_breakdown = $stmt->get_result();
                 </tbody>
             </table>
         </div>
+
     </div>
 </body>
 </html>

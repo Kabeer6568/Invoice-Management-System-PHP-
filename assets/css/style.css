@@ -426,6 +426,7 @@ button:hover {
 .invoices-section,
 .breakdown-section {
     margin-top: 30px;
+    margin-bottom: 30px;
 }
 
 .projects-section h2,

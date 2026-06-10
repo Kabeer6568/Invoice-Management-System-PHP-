@@ -108,7 +108,7 @@ function createClientInvoice(mysqli $db, int $client_id, array $project_ids = []
     // ── 6. Insert invoice ─────────────────────────────────────────────────────
     $invoiceNumber   = generateInvoiceNumber();
     $invoiceDate     = date('Y-m-d');
-    $dueDate         = date('Y-m-d', strtotime('+30 days'));
+    $dueDate         = date('Y-m-d', strtotime('+10 days'));
     $tax             = 0.00;
     $discount        = 0.00;
     $paidAmount      = 0.00;

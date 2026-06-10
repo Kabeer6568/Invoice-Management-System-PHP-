@@ -167,7 +167,7 @@ if ($selected_client) {
                 
                 <div class="form-group">
                     <label>Due Date *</label>
-                    <input type="date" name="due_date" value="<?php echo date('Y-m-d', strtotime('+30 days')); ?>" required>
+                    <input type="date" name="due_date" value="<?php echo date('Y-m-d', strtotime('+10 days')); ?>" required>
                 </div>
             </div>
             
