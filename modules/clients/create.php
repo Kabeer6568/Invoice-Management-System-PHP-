@@ -60,7 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <?php if($success): ?>
-            <div class="alert alert-success"><?php echo escape($success); ?></div>
+            <div class="alert alert-success">
+                <?php echo escape($success); ?>
+                <a href="../projects/create.php?client=<?php echo $client_id; ?>" class="btn-add-project">
+                    Create Project
+                </a>
+            </div>
         <?php endif; ?>
         
         <form method="POST" class="form-container">

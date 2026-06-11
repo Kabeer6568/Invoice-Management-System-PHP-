@@ -115,18 +115,9 @@ if ($selected_project) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Invoice</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/style.css">
     <style>
-        .items-table { width:100%; border-collapse:collapse; margin-bottom:10px; }
-        .items-table th { background:#f5f5f5; padding:10px 12px; text-align:left; font-size:13px; border-bottom:2px solid #ddd; }
-        .items-table td { padding:8px 6px; vertical-align:middle; }
-        .items-table td input[type="text"]   { width:100%; box-sizing:border-box; }
-        .items-table td input[type="number"] { width:140px; }
-        .btn-remove  { background:#e74c3c; color:#fff; border:none; border-radius:4px; padding:5px 10px; cursor:pointer; font-size:13px; }
-        .btn-remove:hover  { background:#c0392b; }
-        .btn-add-row { background:#27ae60; color:#fff; border:none; border-radius:4px; padding:8px 18px; cursor:pointer; font-size:14px; margin-bottom:20px; }
-        .btn-add-row:hover { background:#219150; }
-        #live-total { font-size:1.4em; font-weight:700; color:#2c3e50; }
+        
     </style>
 </head>
 <body>

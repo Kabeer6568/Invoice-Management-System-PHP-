@@ -52,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // ── 2. Auto-create combined invoice for this client ───────────────
             // Only passes the new project ID — unpaid balance is added automatically
             $result = createClientInvoice($db, $client_id, [$project_id]);
+            $invoice_id = $result['invoice_id'] ?? 0;
 
             if ($result['success']) {
                 logActivity($_SESSION['admin_id'], 'CREATE_INVOICE', "Auto-created invoice: {$result['invoice_number']} for project: $project_name");
@@ -90,7 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <?php if ($success): ?>
-            <div class="alert alert-success"><?php echo escape($success); ?></div>
+            <div class="alert alert-success">
+                <?php echo escape($success); ?>
+                <a href="../invoices/view.php?id=<?php echo $invoice_id; ?>" class="btn-add-project">
+                    View Invoice
+                </a>
+            </div>
         <?php endif; ?>
 
         <form method="POST" class="form-container">
