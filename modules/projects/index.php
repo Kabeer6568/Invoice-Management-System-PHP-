@@ -81,7 +81,7 @@ $sql = "SELECT p.*,
                    SELECT i.payment_status
                    FROM   invoices i
                    WHERE  i.client_id = p.client_id
-                   ORDER  BY i.invoice_date DESC
+                   ORDER  BY i.id DESC
                    LIMIT  1
                ) AS payment_status
         FROM   projects p

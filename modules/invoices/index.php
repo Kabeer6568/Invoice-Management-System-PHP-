@@ -26,6 +26,35 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     }
 }
 
+// Handle bulk actions
+if (isset($_POST['bulk_action']) && isset($_POST['selected_invoices'])) {
+    $selected_ids = $_POST['selected_invoices'];
+    $bulk_action = $_POST['bulk_action'];
+    
+    if (count($selected_ids) > 0) {
+        $ids_string = implode(',', array_map('intval', $selected_ids));
+        
+        if ($bulk_action == 'send_whatsapp') {
+            // Redirect to bulk WhatsApp sending page
+            header("Location: bulk_whatsapp.php?ids=" . $ids_string);
+            exit();
+        } elseif ($bulk_action == 'send_reminders') {
+            header("Location: bulk_reminders.php?ids=" . $ids_string);
+            exit();
+        } elseif ($bulk_action == 'download_pdf') {
+            header("Location: bulk-pdf.php?ids=" . $ids_string);
+            exit();
+        } elseif ($bulk_action == 'mark_paid') {
+            // Mark selected invoices as paid
+            $stmt = $db->prepare("UPDATE invoices SET payment_status = 'Paid', paid_amount = total, remaining_amount = 0 WHERE id IN ($ids_string)");
+            if ($stmt->execute()) {
+                header("Location: index.php?msg=marked_paid");
+                exit();
+            }
+        }
+    }
+}
+
 // Pagination
 $page   = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit  = 15;
@@ -76,14 +105,14 @@ $stmt->execute();
 $total       = $stmt->get_result()->fetch_assoc()['total'];
 $total_pages = ceil($total / $limit);
 
-// Get invoices — LEFT JOIN projects so NULL project_id invoices still appear
-$sql = "SELECT i.*, c.name as client_name, 
+// Get invoices
+$sql = "SELECT i.*, c.name as client_name, c.phone as client_phone,
                COALESCE(p.project_name, '— Multiple Projects —') as project_name
         FROM invoices i
         JOIN clients c ON i.client_id = c.id
         LEFT JOIN projects p ON i.project_id = p.id
         $where_clause
-        ORDER BY i.invoice_date DESC
+        ORDER BY i.invoice_date DESC, i.id DESC
         LIMIT $offset, $limit";
 $stmt = $db->prepare($sql);
 if ($params) $stmt->bind_param($types, ...$params);
@@ -100,6 +129,76 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Invoices</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <style>
+        .bulk-actions-bar {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .bulk-actions-bar .select-info {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .bulk-actions-bar select {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .bulk-actions-bar button {
+            background: #A81E2A;
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .checkbox-col {
+            width: 30px;
+            text-align: center;
+        }
+        
+        .select-all-checkbox {
+            cursor: pointer;
+        }
+        
+        .invoice-checkbox {
+            cursor: pointer;
+        }
+        
+        .btn-whatsapp-bulk {
+            background: linear-gradient(45deg, #25D366, #33C758, #4CAE4F);
+            color: white;
+        }
+        
+        .btn-reminder-bulk {
+            background: linear-gradient(45deg, #4CAE4F, #33C758, #25D366);
+            color: white;
+        }
+        
+        .btn-paid-bulk {
+            background: #28a745;
+            color: white;
+        }
+        
+        .selected-count {
+            background: #A81E2A;
+            color: white;
+            padding: 4px 12px;
+            /* border-radius: 12px; */
+            font-size: 12px;
+            /* font-weight: bold; */
+        }
+    </style>
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
@@ -149,53 +248,97 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
         </form>
 
         <?php if (isset($_GET['msg'])): ?>
-            <div class="alert alert-success">Invoice deleted successfully!</div>
+            <div class="alert alert-success">
+                <?php 
+                if ($_GET['msg'] == 'deleted') echo "Invoice deleted successfully!";
+                if ($_GET['msg'] == 'marked_paid') echo "Invoices marked as paid successfully!";
+                ?>
+            </div>
         <?php endif; ?>
 
         <?php if (isset($error)): ?>
             <div class="alert alert-error"><?php echo escape($error); ?></div>
         <?php endif; ?>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Invoice #</th>
-                    <th>Client</th>
-                    <th>Project</th>
-                    <th>Date</th>
-                    <th>Due Date</th>
-                    <th>Total</th>
-                    <th>Paid</th>
-                    <th>Balance</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($invoice = $invoices->fetch_assoc()): ?>
-                <tr>
-                    <td><?php echo escape($invoice['invoice_number']); ?></td>
-                    <td><?php echo escape($invoice['client_name']); ?></td>
-                    <td><?php echo escape($invoice['project_name']); ?></td>
-                    <td><?php echo date('Y-m-d', strtotime($invoice['invoice_date'])); ?></td>
-                    <td><?php echo date('Y-m-d', strtotime($invoice['due_date'])); ?></td>
-                    <td>Rs.<?php echo number_format($invoice['total'], 2); ?></td>
-                    <td>Rs.<?php echo number_format($invoice['paid_amount'], 2); ?></td>
-                    <td>Rs.<?php echo number_format($invoice['remaining_amount'], 2); ?></td>
-                    <td><span class="status-<?php echo strtolower($invoice['payment_status']); ?>"><?php echo escape($invoice['payment_status']); ?></span></td>
-                    <td>
-                        <a href="view.php?id=<?php echo $invoice['id']; ?>">View</a>
-                        <a href="edit.php?id=<?php echo $invoice['id']; ?>">Edit</a>
-                        <a href="pdf.php?id=<?php echo $invoice['id']; ?>" target="_blank">PDF</a>
-                        <?php if ($invoice['paid_amount'] == 0): ?>
-                        <a href="?delete=<?php echo $invoice['id']; ?>"
-                           onclick="return confirm('Are you sure?')">Delete</a>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+        <!-- Bulk Actions Bar -->
+        <form method="POST" id="bulkActionForm">
+            <div class="bulk-actions-bar">
+                <div class="select-info">
+                    <strong>Bulk Actions:</strong>
+                </div>
+                <select name="bulk_action" id="bulk_action" required>
+                    <option value="">Select Action</option>
+                    <option value="send_whatsapp">Send via WhatsApp</option>
+                    <option value="send_reminders">Send Payment Reminders</option>
+                    <option value="download_pdf">Download PDFs</option>
+                    <option value="mark_paid">Mark as Paid</option>
+                </select>
+                <button type="submit" onclick="return confirmBulkAction()">Apply to Selected</button>
+                <div class="select-info">
+                    <span id="selectedCountDisplay" class="selected-count">0</span> invoice(s) selected
+                </div>
+                <button type="button" onclick="selectAll()" class="btn-secondary" style="background: #6c757d;">Select All</button>
+                <button type="button" onclick="deselectAll()" class="btn-secondary" style="background: #6c757d;">Deselect All</button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="checkbox-col">
+                            <input type="checkbox" id="selectAllCheckbox" class="select-all-checkbox" onclick="toggleSelectAll()">
+                        </th>
+                        <th>Invoice #</th>
+                        <th>Client</th>
+                        <th>Project</th>
+                        <th>Date</th>
+                        <th>Due Date</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    $counter = $offset + 1;
+                    while ($invoice = $invoices->fetch_assoc()): 
+                    ?>
+                    <tr>
+                        <td class="checkbox-col">
+                            <input type="checkbox" name="selected_invoices[]" value="<?php echo $invoice['id']; ?>" 
+                                   class="invoice-checkbox" onclick="updateSelectedCount()">
+                        </td>
+                        <td><?php echo escape($invoice['invoice_number']); ?></td>
+                        <td><?php echo escape($invoice['client_name']); ?></td>
+                        <td><?php echo escape($invoice['project_name']); ?></td>
+                        <td><?php echo date('Y-m-d', strtotime($invoice['invoice_date'])); ?></td>
+                        <td><?php echo date('Y-m-d', strtotime($invoice['due_date'])); ?></td>
+                        <td>Rs.<?php echo number_format($invoice['total'], 2); ?></td>
+                        <td>Rs.<?php echo number_format($invoice['paid_amount'], 2); ?></td>
+                        <td>Rs.<?php echo number_format($invoice['remaining_amount'], 2); ?></td>
+                        <td><span class="status-<?php echo strtolower($invoice['payment_status']); ?>"><?php echo escape($invoice['payment_status']); ?></span></td>
+                        <td>
+                            <a href="view.php?id=<?php echo $invoice['id']; ?>">View</a>
+                            <a href="edit.php?id=<?php echo $invoice['id']; ?>">Edit</a>
+                            <a href="pdf.php?id=<?php echo $invoice['id']; ?>" target="_blank">PDF</a>
+                            <a href="send_whatsapp.php?id=<?php echo $invoice['id']; ?>" style="color:#25D366;">Send</a>
+                            <?php if ($invoice['paid_amount'] == 0): ?>
+                            <a href="?delete=<?php echo $invoice['id']; ?>"
+                               onclick="return confirm('Are you sure?')">Delete</a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endwhile; ?>
+                    
+                    <?php if ($invoices->num_rows == 0): ?>
+                    <tr>
+                        <td colspan="12" class="text-center">No invoices found</td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </form>
 
         <?php if ($total_pages > 1): ?>
         <div class="pagination">
@@ -209,5 +352,82 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
         <?php endif; ?>
 
     </div>
+
+    <script>
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.invoice-checkbox:checked');
+            const count = checkboxes.length;
+            document.getElementById('selectedCountDisplay').innerText = count;
+            
+            // Update select all checkbox state
+            const allCheckboxes = document.querySelectorAll('.invoice-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            if (allCheckboxes.length === count) {
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.checked = false;
+            }
+        }
+        
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const checkboxes = document.querySelectorAll('.invoice-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            updateSelectedCount();
+        }
+        
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('.invoice-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateSelectedCount();
+            document.getElementById('selectAllCheckbox').checked = true;
+        }
+        
+        function deselectAll() {
+            const checkboxes = document.querySelectorAll('.invoice-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectedCount();
+            document.getElementById('selectAllCheckbox').checked = false;
+        }
+        
+        function confirmBulkAction() {
+            const selectedCount = document.querySelectorAll('.invoice-checkbox:checked').length;
+            const action = document.getElementById('bulk_action').value;
+            
+            if (selectedCount === 0) {
+                alert('Please select at least one invoice.');
+                return false;
+            }
+            
+            if (!action) {
+                alert('Please select an action.');
+                return false;
+            }
+            
+            let message = '';
+            if (action === 'send_whatsapp') {
+                message = `Send ${selectedCount} invoice(s) via WhatsApp? This will open WhatsApp for each invoice.`;
+            } else if (action === 'send_reminders') {
+                message = `Send payment reminders for ${selectedCount} invoice(s)?`;
+            } else if (action === 'download_pdf') {
+                message = `Download PDFs for ${selectedCount} invoice(s)?`;
+            } else if (action === 'mark_paid') {
+                message = `Mark ${selectedCount} invoice(s) as paid? This action cannot be undone.`;
+            }
+            
+            return confirm(message);
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSelectedCount();
+        });
+    </script>
 </body>
 </html>

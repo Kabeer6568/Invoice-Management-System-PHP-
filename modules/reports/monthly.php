@@ -334,8 +334,8 @@ $comparison = $db->query("
 
         <!-- ── Outstanding Balances (all months) ── -->
         <?php if ($outstanding->num_rows > 0): ?>
-        <div class="breakdown-section" style="border-left: 4px solid #e74c3c; padding-left: 16px;">
-            <h3 style="color:#e74c3c;">
+        <div class="breakdown-section" style="border-left: 4px solid #a81e2a; padding-left: 16px;">
+            <h3 style="color:#a81e2a;">
                 ⚠ Outstanding Balances — All Months
                 <small style="font-size:13px; font-weight:400; color:#888; margin-left:8px;">
                     (<?php echo $outstanding->num_rows; ?> invoice<?php echo $outstanding->num_rows > 1 ? 's' : ''; ?>)

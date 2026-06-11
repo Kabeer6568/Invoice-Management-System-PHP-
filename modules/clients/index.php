@@ -34,7 +34,7 @@ $total = $total_result->fetch_assoc()['total'];
 $total_pages = ceil($total / $limit);
 
 // Get clients
-$query = "SELECT * FROM clients $where ORDER BY created_at DESC LIMIT $offset, $limit";
+$query = "SELECT * FROM clients $where ORDER BY id DESC LIMIT $offset, $limit";
 $clients = $db->query($query);
 ?>
 <!DOCTYPE html>
