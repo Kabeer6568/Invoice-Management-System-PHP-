@@ -14,7 +14,7 @@
             
             <h3>Admin Login</h3>
                         <form method="POST">
-                <input type="hidden" name="csrf_token" value="8b9d3255c545b47892961f418f68737e4112cbb17c1f70ed36c71456be8efdd8">                <div class="form-group">
+                <input type="hidden" name="csrf_token" value="b7f7fd75750aad02034e46486962acde14dbe4106c2c07f73be7c3fb2aa5f88a">                <div class="form-group">
                     <label>Username</label>
                     <input type="text" name="username" required>
                 </div>
