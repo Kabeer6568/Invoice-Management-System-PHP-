@@ -175,10 +175,7 @@ $comparison = $db->query("
                     <?php endfor; ?>
                 </select>
 
-                <select name="type">
-                    <option value="summary"  <?php echo $report_type == 'summary'  ? 'selected' : ''; ?>>Summary Report</option>
-                    <option value="detailed" <?php echo $report_type == 'detailed' ? 'selected' : ''; ?>>Detailed Report</option>
-                </select>
+                
 
                 <button type="submit">Generate Report</button>
             </div>
