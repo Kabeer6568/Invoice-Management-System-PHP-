@@ -24,7 +24,7 @@ $sql = "SELECT i.*, c.name as client_name, c.company, c.address, c.email, c.phon
         p.project_name, p.description as project_description
         FROM invoices i 
         JOIN clients c ON i.client_id = c.id 
-        JOIN projects p ON i.project_id = p.id 
+        LEFT JOIN projects p ON i.project_id = p.id 
         WHERE i.id IN ($placeholders)
         ORDER BY i.invoice_date DESC";
 
@@ -39,175 +39,659 @@ $invoices = $stmt->get_result();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bulk Invoices Export</title>
+    <title>Bulk Invoices — Ozbix IT Solutions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --red:       #A81E2A;
+            --red-deep:  #7A1219;
+            --red-light: #C8313F;
+            --red-mist:  #FAF0F1;
+            --red-pale:  #F3E0E2;
+            --ink:       #1A1215;
+            --ink-mid:   #4A3538;
+            --ink-soft:  #8A7072;
+            --rule:      #E8D8DA;
+            --bg:        #FDFBFB;
+            --white:     #FFFFFF;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            padding: 20px;
+            font-family: 'Outfit', sans-serif;
+            background: #F0EAEA;
+            min-height: 100vh;
+            padding: 40px 20px;
         }
+
+        .screen-actions {
+            max-width: 860px;
+            margin: 0 auto 18px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .screen-actions button {
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border: 1.5px solid var(--red);
+            border-radius: 3px;
+            padding: 7px 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-print { background: var(--red); color: #fff; }
+        .btn-print:hover { background: var(--red-deep); }
+        .btn-close { background: transparent; color: var(--red); }
+        .btn-close:hover { background: var(--red-mist); }
+
         .invoice-wrapper {
-            margin-bottom: 40px;
+            margin-bottom: 50px;
             page-break-after: always;
         }
-        .invoice-container {
-            max-width: 1000px;
+
+        .invoice {
+            max-width: 860px;
             margin: 0 auto;
-            background: white;
+            background: var(--white);
+            position: relative;
+            overflow: hidden;
         }
-        .header {
+
+        .invoice::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 5px;
+            background: linear-gradient(180deg, var(--red-light) 0%, var(--red-deep) 100%);
+        }
+
+        .inv-header {
+            background: var(--ink);
+            padding: 42px 52px 0 57px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .inv-header::before {
+            content: '';
+            position: absolute;
+            right: -60px; top: -60px;
+            width: 240px; height: 240px;
+            border-radius: 50%;
+            border: 40px solid rgba(168,30,42,0.18);
+        }
+
+        .inv-header::after {
+            content: '';
+            position: absolute;
+            right: 80px; top: -100px;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            border: 28px solid rgba(168,30,42,0.09);
+        }
+
+        .header-top {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-wordmark {
+            font-family: 'Poppins', serif;
+            font-size: 42px;
+            font-weight: 300;
+            color: #fff;
+            letter-spacing: 0.12em;
+            line-height: 1;
+        }
+
+        .brand-wordmark span { color: var(--red-light); }
+
+        .brand-sub {
+            font-size: 10px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.83);
+            margin-top: 6px;
+        }
+
+        .inv-label-block { text-align: right; position: relative; z-index: 1; }
+
+        .inv-word {
+            font-family: 'Poppins', serif;
+            font-size: 52px;
+            font-weight: 300;
+            font-style: italic;
+            color: #fff;
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
+
+        .bulk-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            margin-top: 8px;
+        }
+
+        .inv-number-label {
+            font-size: 9px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.88);
+        }
+
+        .inv-number-val {
+            font-size: 15px;
+            font-weight: 500;
+            color: #fff;
+            letter-spacing: 0.06em;
+            margin-top: 2px;
+        }
+
+        .header-date-strip {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-top: 32px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            position: relative;
+            z-index: 1;
+        }
+
+        .hds-label {
+            font-size: 9px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .hds-val {
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            margin-top: 3px;
+        }
+
+        .hds-sep { width: 1px; height: 30px; background: rgba(255,255,255,0.1); }
+
+        .hds-status { margin-left: auto; }
+
+        .status-pill {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 2px;
+        }
+
+        .status-pending { background: rgba(255,193,7,0.15); color: #FFC107; border: 1px solid rgba(255,193,7,0.3); }
+        .status-paid    { background: rgba(40,167,69,0.15);  color: #5CB85C; border: 1px solid rgba(40,167,69,0.3); }
+        .status-partial { background: rgba(23,162,184,0.15); color: #17A2B8; border: 1px solid rgba(23,162,184,0.3); }
+        .status-overdue { background: rgba(168,30,42,0.2);   color: var(--red-light); border: 1px solid rgba(168,30,42,0.3); }
+
+        .header-arc {
+            height: 38px;
+            background: var(--white);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            margin-top: -1px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .inv-body { padding: 10px 52px 48px 57px; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
             margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #667eea;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--rule);
         }
-        .company-info h2 {
-            color: #667eea;
-            margin-bottom: 10px;
+
+        .section-eyebrow {
+            font-size: 9px;
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+            color: var(--red);
+            font-weight: 600;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .invoice-info {
-            text-align: right;
+
+        .section-eyebrow::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+
+        .client-name {
+            font-family: 'Poppins', serif;
+            font-size: 26px;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.1;
+            margin-bottom: 4px;
         }
-        .invoice-info h3 {
-            color: #667eea;
-            margin-bottom: 10px;
+
+        .client-company { font-size: 13px; font-weight: 500; color: var(--red); margin-bottom: 12px; }
+
+        .contact-line {
+            font-size: 12px;
+            color: var(--ink-soft);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
         }
-        .bill-to, .project-info {
-            margin-bottom: 30px;
+
+        .contact-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+
+        .payment-card {
+            background: var(--red-mist);
+            border: 1px solid var(--red-pale);
+            border-radius: 6px;
+            padding: 20px 22px;
+            position: relative;
+            overflow: hidden;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
+
+        .payment-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--red), var(--red-light));
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
+
+        .payment-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--red-pale);
+        }
+
+        .payment-row:last-child { border-bottom: none; }
+        .pr-label { font-size: 11px; color: var(--ink-soft); }
+        .pr-value { font-size: 12px; font-weight: 500; color: var(--ink); }
+        .pr-value.mono { font-family: 'Outfit', monospace; font-size: 11px; letter-spacing: 0.04em; }
+
+        .items-section { margin-bottom: 32px; }
+
+        .items-table { width: 100%; border-collapse: collapse; }
+
+        .items-table thead tr { border-bottom: 1.5px solid var(--ink); }
+
+        .items-table th {
+            font-size: 9px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--ink-soft);
+            padding: 0 0 10px;
             text-align: left;
         }
-        th {
-            background: #f5f5f5;
+
+        .items-table th.r { text-align: right; }
+
+        .items-table tbody tr { border-bottom: 1px solid var(--rule); }
+        .items-table tbody tr:last-child { border-bottom: 2px solid var(--ink); }
+
+        .items-table td {
+            padding: 14px 0;
+            vertical-align: top;
+            font-size: 13px;
+            color: var(--ink);
         }
-        .text-right {
-            text-align: right;
-        }
+
+        .items-table td.r { text-align: right; font-weight: 500; }
+
+        .item-title { font-weight: 500; font-size: 14px; color: var(--ink); }
+
+        .totals-section { display: flex; justify-content: flex-end; margin-bottom: 36px; }
+
+        .totals-box { min-width: 280px; }
+
         .total-row {
-            background: #f5f5f5;
-            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--rule);
         }
-        .balance-row {
-            background: #e8f4f8;
-            font-weight: bold;
+
+        .total-row:last-of-type { border-bottom: none; }
+        .tr-label { font-size: 12px; color: var(--ink-soft); }
+        .tr-value { font-size: 13px; color: var(--ink-mid); }
+
+        .grand-total {
+            background: var(--ink);
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            border-radius: 4px;
         }
-        .footer {
-            margin-top: 40px;
+
+        .gt-label { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+        .gt-currency { font-size: 11px; color: rgba(255,255,255,0.35); margin-right: 4px; }
+        .gt-amount { font-family: 'Poppins', serif; font-size: 32px; font-weight: 600; color: #fff; line-height: 1; }
+        .gt-amount-wrap { display: flex; align-items: baseline; gap: 4px; }
+
+        .balance-due-row {
+            background: #fff8f0;
+            border-radius: 4px;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            border: 1px solid #f0d8b0;
+        }
+
+        .bd-label { font-size: 11px; color: #a06020; }
+        .bd-value { font-size: 14px; font-weight: 700; color: #a06020; }
+
+        .history-section { margin-bottom: 28px; }
+
+        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+        .history-table th {
+            font-size: 9px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            font-weight: 500;
+            padding: 0 0 8px;
+            border-bottom: 1px solid var(--rule);
+            text-align: left;
+        }
+
+        .history-table td { padding: 8px 0; border-bottom: 1px solid var(--rule); color: var(--ink-mid); }
+
+        .terms-block {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            padding: 16px 20px;
+            background: var(--red-mist);
+            border-left: 3px solid var(--red);
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 36px;
+        }
+
+        .terms-icon { font-size: 18px; color: var(--red); flex-shrink: 0; margin-top: 1px; }
+        .terms-title { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--red); font-weight: 600; margin-bottom: 4px; }
+        .terms-text { font-size: 14px; color: #000; line-height: 1.6; }
+
+        .inv-footer {
+            border-top: 1px solid var(--rule);
+            padding-top: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .footer-contact { display: flex; gap: 20px; flex-wrap: wrap; }
+
+        .fc-item { font-size: 11px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+        .fc-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--red); }
+        .footer-tagline { font-family: 'Poppins', serif; font-size: 14px; font-style: italic; color: var(--ink-soft); }
+
+        .bulk-counter {
             text-align: center;
-            font-size: 12px;
-            color: #666;
+            margin-bottom: 15px;
+            font-size: 11px;
+            color: var(--ink-soft);
+            letter-spacing: 0.1em;
         }
+
         @media print {
-            body {
-                padding: 0;
+            body { background: white; padding: 0; }
+            .screen-actions { display: none; }
+            .inv-header, .grand-total, .invoice::before, .payment-card::before {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 16px 8px; }
+            .inv-header { padding: 28px 24px 0 28px; }
+            .inv-body { padding: 8px 24px 36px 28px; }
+            .info-grid { grid-template-columns: 1fr; }
+            .invoice::before { width: 3px; }
+            .brand-wordmark { font-size: 32px; }
+            .inv-word { font-size: 36px; }
         }
     </style>
 </head>
 <body>
-    <?php 
-    $count = 0;
-    while($invoice = $invoices->fetch_assoc()): 
-        $count++;
-        // Get payment history for this invoice
-        $pay_stmt = $db->prepare("SELECT * FROM payments WHERE invoice_id = ? ORDER BY payment_date DESC");
-        $pay_stmt->bind_param("i", $invoice['id']);
-        $pay_stmt->execute();
-        $payments = $pay_stmt->get_result();
-    ?>
-    <div class="invoice-wrapper">
-        <div class="invoice-container">
-            <div class="header">
-                <div class="company-info">
-                    <h2>YOUR COMPANY NAME</h2>
-                    <p>123 Business Street<br>
-                    City, State 12345<br>
-                    Phone: (555) 123-4567<br>
-                    Email: info@company.com</p>
+
+<div class="screen-actions">
+    <button class="btn-print" onclick="window.print()">Print All Invoices</button>
+    <button class="btn-close" onclick="window.close()">Close</button>
+</div>
+
+<?php 
+$count = 0;
+$total_invoices = count($invoice_ids);
+while($invoice = $invoices->fetch_assoc()): 
+    $count++;
+    
+    // Get payment history for this invoice
+    $pay_stmt = $db->prepare("SELECT * FROM payments WHERE invoice_id = ? ORDER BY payment_date DESC");
+    $pay_stmt->bind_param("i", $invoice['id']);
+    $pay_stmt->execute();
+    $payments = $pay_stmt->get_result();
+?>
+
+<div class="invoice-wrapper">
+    <div class="bulk-counter">
+        Invoice <?php echo $count; ?> of <?php echo $total_invoices; ?>
+    </div>
+    
+    <div class="invoice">
+        <!-- HEADER -->
+        <div class="inv-header">
+            <div class="header-top">
+                <div class="brand-block">
+                    <div class="brand-wordmark">OZ<span>Bi</span>X</div>
+                    <div class="brand-sub">Empowered by Innovation</div>
                 </div>
-                <div class="invoice-info">
-                    <h3>INVOICE <?php echo $count; ?> of <?php echo count($invoice_ids); ?></h3>
-                    <p><strong>Invoice #:</strong> <?php echo $invoice['invoice_number']; ?><br>
-                    <strong>Date:</strong> <?php echo date('Y-m-d', strtotime($invoice['invoice_date'])); ?><br>
-                    <strong>Due Date:</strong> <?php echo date('Y-m-d', strtotime($invoice['due_date'])); ?><br>
-                    <strong>Status:</strong> <?php echo $invoice['payment_status']; ?></p>
+                <div class="inv-label-block">
+                    <div class="inv-word">Invoice</div>
+                    <div class="inv-number-line">
+                        <div class="inv-number-label">Invoice No.</div>
+                        <div class="inv-number-val"><?php echo htmlspecialchars($invoice['invoice_number']); ?></div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="bill-to">
-                <h3>Bill To:</h3>
-                <p><strong><?php echo htmlspecialchars($invoice['client_name']); ?></strong><br>
-                <?php echo htmlspecialchars($invoice['company']); ?><br>
-                <?php echo nl2br(htmlspecialchars($invoice['address'])); ?></p>
+
+            <div class="header-date-strip">
+                <div class="hds-item">
+                    <div class="hds-label">Issue Date</div>
+                    <div class="hds-val"><?php echo date('d M Y', strtotime($invoice['invoice_date'])); ?></div>
+                </div>
+                <div class="hds-sep"></div>
+                <div class="hds-item">
+                    <div class="hds-label">Due Date</div>
+                    <div class="hds-val"><?php echo date('d M Y', strtotime($invoice['due_date'])); ?></div>
+                </div>
+                <div class="hds-status">
+                    <span class="status-pill status-<?php echo strtolower($invoice['payment_status']); ?>">
+                        <?php echo htmlspecialchars($invoice['payment_status']); ?>
+                    </span>
+                </div>
             </div>
-            
-            <div class="project-info">
-                <h3>Project:</h3>
-                <p><?php echo htmlspecialchars($invoice['project_name']); ?></p>
+
+            <div class="header-arc"></div>
+        </div>
+
+        <!-- BODY -->
+        <div class="inv-body">
+            <!-- Client + Bank Details -->
+            <div class="info-grid">
+                <div>
+                    <div class="section-eyebrow">Billed To</div>
+                    <div class="client-name"><?php echo htmlspecialchars($invoice['client_name']); ?></div>
+                    <div class="client-company"><?php echo htmlspecialchars($invoice['company']); ?></div>
+                    <div>
+                        <?php if ($invoice['phone']): ?>
+                        <div class="contact-line"><span class="contact-dot"></span><?php echo htmlspecialchars($invoice['phone']); ?></div>
+                        <?php endif; ?>
+                        <?php if ($invoice['email']): ?>
+                        <div class="contact-line"><span class="contact-dot"></span><?php echo htmlspecialchars($invoice['email']); ?></div>
+                        <?php endif; ?>
+                        <?php if ($invoice['address']): ?>
+                        <div class="contact-line"><span class="contact-dot"></span><?php echo nl2br(htmlspecialchars($invoice['address'])); ?></div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="section-eyebrow">Payment Details</div>
+                    <div class="payment-card">
+                        <div class="payment-row"><span class="pr-label">Bank</span><span class="pr-value">Meezan Bank</span></div>
+                        <div class="payment-row"><span class="pr-label">Branch</span><span class="pr-value">Soldier Bazar Branch</span></div>
+                        <div class="payment-row"><span class="pr-label">Account Name</span><span class="pr-value">Ozbix IT Solutions</span></div>
+                        <div class="payment-row"><span class="pr-label">Account No.</span><span class="pr-value mono">01790114502628</span></div>
+                    </div>
+                </div>
             </div>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th class="text-right">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><?php echo htmlspecialchars($invoice['project_name']); ?> - Services</td>
-                        <td class="text-right">$<?php echo number_format($invoice['amount'], 2); ?></td>
-                    </tr>
-                    <?php if($invoice['tax'] > 0): ?>
-                    <tr>
-                        <td>Tax</td>
-                        <td class="text-right">$<?php echo number_format($invoice['tax'], 2); ?></td>
-                    </tr>
+
+            <!-- Items -->
+            <div class="items-section">
+                <div class="section-eyebrow">Services</div>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th style="width:75%">Description</th>
+                            <th class="r">Amount (PKR)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><div class="item-title"><?php echo htmlspecialchars($invoice['project_name'] ?? 'Services'); ?></div></td>
+                            <td class="r"><?php echo number_format($invoice['amount'], 0); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Totals -->
+            <div class="totals-section">
+                <div class="totals-box">
+                    <div class="total-row">
+                        <span class="tr-label">Subtotal</span>
+                        <span class="tr-value"><?php echo number_format($invoice['amount'], 0); ?></span>
+                    </div>
+
+                    <?php if ($invoice['tax'] > 0): ?>
+                    <div class="total-row">
+                        <span class="tr-label">Tax</span>
+                        <span class="tr-value"><?php echo number_format($invoice['tax'], 0); ?></span>
+                    </div>
                     <?php endif; ?>
-                    <?php if($invoice['discount'] > 0): ?>
-                    <tr>
-                        <td>Discount</td>
-                        <td class="text-right">-$<?php echo number_format($invoice['discount'], 2); ?></td>
-                    </tr>
+
+                    <?php if ($invoice['discount'] > 0): ?>
+                    <div class="total-row">
+                        <span class="tr-label">Discount</span>
+                        <span class="tr-value">&minus;<?php echo number_format($invoice['discount'], 0); ?></span>
+                    </div>
                     <?php endif; ?>
-                    <tr class="total-row">
-                        <td><strong>Total</strong></td>
-                        <td class="text-right"><strong>$<?php echo number_format($invoice['total'], 2); ?></strong></td>
-                    </tr>
-                    <tr>
-                        <td>Paid Amount</td>
-                        <td class="text-right">$<?php echo number_format($invoice['paid_amount'], 2); ?></td>
-                    </tr>
-                    <tr class="balance-row">
-                        <td><strong>Balance Due</strong></td>
-                        <td class="text-right"><strong>$<?php echo number_format($invoice['remaining_amount'], 2); ?></strong></td>
-                    </tr>
-                </tbody>
-            </table>
-            
-            <div class="footer">
-                <p>Thank you for your business!</p>
+
+                    <div class="grand-total">
+                        <span class="gt-label">Total Due</span>
+                        <div class="gt-amount-wrap">
+                            <span class="gt-currency">PKR</span>
+                            <span class="gt-amount"><?php echo number_format($invoice['total'], 0); ?></span>
+                        </div>
+                    </div>
+
+                    <?php if ($invoice['paid_amount'] > 0): ?>
+                    <div class="balance-due-row">
+                        <span class="bd-label">Paid: PKR <?php echo number_format($invoice['paid_amount'], 0); ?> &nbsp;|&nbsp; Balance Due</span>
+                        <span class="bd-value">PKR <?php echo number_format($invoice['remaining_amount'], 0); ?></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Payment History -->
+            <?php if ($payments->num_rows > 0): ?>
+            <div class="history-section">
+                <div class="section-eyebrow">Payment History</div>
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($payment = $payments->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo date('d M Y', strtotime($payment['payment_date'])); ?></d>
+                            <td>PKR <?php echo number_format($payment['amount'], 0); ?></td>
+                            <td><?php echo htmlspecialchars($payment['payment_method']); ?></d>
+                            <td><?php echo htmlspecialchars($payment['reference_number']); ?></d>
+                        </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif; ?>
+
+            <!-- Terms -->
+            <div class="terms-block">
+                <div class="terms-icon">§</div>
+                <div>
+                    <div class="terms-title">Terms &amp; Conditions</div>
+                    <div class="terms-text">Payments are due within 10 days of the invoice date. Kindly pay at your earliest convenience.</div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="inv-footer">
+                <div class="footer-contact">
+                    <div class="fc-item"><span class="fc-dot"></span>billing@ozbix.com</div>
+                    <div class="fc-item"><span class="fc-dot"></span>+923-111-456-324</div>
+                    <div class="fc-item"><span class="fc-dot"></span>www.ozbix.com</div>
+                </div>
+                <div class="footer-tagline">Thank you for your business.</div>
             </div>
         </div>
     </div>
-    <?php 
-    endwhile; 
-    ?>
-    <script>
-        window.print();
-    </script>
+</div>
+
+<?php 
+endwhile; 
+?>
+
+<script>
+    window.print();
+</script>
+
 </body>
 </html>

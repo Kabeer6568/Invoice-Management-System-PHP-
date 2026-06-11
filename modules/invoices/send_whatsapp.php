@@ -56,12 +56,20 @@ if (!file_exists($pdf_path)) {
     file_put_contents($pdf_path, $pdf_content);
 }
 
+// Generate PDF download link
+$pdf_download_link = "http://" . $_SERVER['HTTP_HOST'] . "/invoice-management-system/modules/invoices/pdf.php?id=" . $id . "&download=1";
+
 // Custom message
 $custom_message = "Dear " . $invoice['client_name'] . ",
 
-Thank you for your business! Please find attached your invoice #" . $invoice['invoice_number'] . " for your records.
+Thank you for your business! Please find your invoice attached or download it here:
 
-Invoice Amount: Rs. " . number_format($invoice['total'], 2) . "
+" . $pdf_download_link . "
+
+Invoice #: " . $invoice['invoice_number'] . "
+Total Amount: Rs. " . number_format($invoice['total'], 2) . "
+Paid Amount: Rs. " . number_format($invoice['paid_amount'], 2) . "
+Remaining Amount: Rs. " . number_format($invoice['remaining_amount'], 2) . "
 Due Date: " . date('d M Y', strtotime($invoice['due_date'])) . "
 
 For any questions, please contact us at info@ozbix.com
@@ -199,7 +207,9 @@ $whatsapp_urls = [
                 <p><strong>Name:</strong> <?php echo htmlspecialchars($invoice['client_name']); ?></p>
                 <p><strong>Phone:</strong> <?php echo htmlspecialchars($invoice['phone']); ?></p>
                 <p><strong>Invoice #:</strong> <?php echo $invoice['invoice_number']; ?></p>
-                <p><strong>Amount:</strong> Rs. <?php echo number_format($invoice['total'], 2); ?></p>
+                <p><strong>Total Amount:</strong> <?php echo $invoice['total']; ?></p>
+                <p><strong>Paid Amout:</strong> <?php echo $invoice['paid_amount']; ?></p>
+                <p><strong>Remaining Amount:</strong> Rs. <?php echo number_format($invoice['remaining_amount'], 2); ?></p>
             </div>
             
             <h3>📝 Message Preview</h3>
