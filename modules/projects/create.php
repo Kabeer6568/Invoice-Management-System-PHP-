@@ -56,12 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($result['success']) {
                 logActivity($_SESSION['admin_id'], 'CREATE_INVOICE', "Auto-created invoice: {$result['invoice_number']} for project: $project_name");
-                $success = "Project created! " . $result['message'];
-            } else {
-                $success = "Project created! (Invoice skipped: " . $result['message'] . ")";
+                header("Location: create.php?success=1&invoice_id=" . $invoice_id);
+                exit();
             }
+            // } else {
+            //     $success = "Project created! (Invoice skipped: " . $result['message'] . ")";
+            // }
 
-            $_POST = [];
+            // $_POST = [];
         } else {
             $error = "Error creating project: " . $db->error;
         }
@@ -69,7 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 }
+
+$success    = '';
+$invoice_id = 0;
+if (isset($_GET['success'])) {
+    $invoice_id = (int)($_GET['invoice_id'] ?? 0);
+    $success    = "Project and invoice created successfully!";
+}
+$error = $error ?? '';
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

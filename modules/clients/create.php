@@ -29,15 +29,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
             $client_id = $db->insert_id;
             logActivity($_SESSION['admin_id'], 'CREATE_CLIENT', "Created new client: $name (ID: $client_id)");
-            $success = "Client created successfully!";
-            // Clear form
-            $_POST = array();
+            header("Location: create.php?success=1&client_id=" . $client_id);
+            exit();
+            // $success = "Client created successfully!";
+            // // Clear form
+            // $_POST = array();
         } else {
             $error = "Error creating client: " . $db->error;
         }
         $stmt->close();
     }
 }
+$success    = '';
+$client_id = 0;
+if (isset($_GET['success'])) {
+    $client_id = (int)($_GET['client_id'] ?? 0);
+    $success    = "Client created successfully!";
+}
+$error = $error ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">

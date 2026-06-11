@@ -82,11 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 updateInvoiceStatus($invoiceId);
                 logActivity($_SESSION['admin_id'], 'CREATE_INVOICE', "Created invoice: $invoiceNumber (ID: $invoiceId)");
-                $success = "Invoice created successfully! Invoice Number: $invoiceNumber";
+                header("Location: create.php?success=1&invoice_id=" . $invoiceId . "&invoice_number=" . urlencode($invoiceNumber));
+                exit();
+                // $success = "Invoice created successfully! Invoice Number: $invoiceNumber";
 
-                $selected_client  = 0;
-                $selected_project = 0;
-                $_POST = [];
+                // $selected_client  = 0;
+                // $selected_project = 0;
+                // $_POST = [];
             } else {
                 $error = "Error creating invoice: " . $db->error;
             }
@@ -107,6 +109,11 @@ if ($selected_project) {
     if ($pd) {
         $prefill_amount = $pd['project_type'] === 'Monthly' ? $pd['monthly_fee'] : $pd['cost'];
     }
+}
+if (isset($_GET['success'])) {
+    $invoice_id     = (int)($_GET['invoice_id'] ?? 0);
+    $invoiceNumber  = $_GET['invoice_number'] ?? '';
+    $success        = "Invoice created successfully!" . ($invoiceNumber ? " Invoice Number: $invoiceNumber" : "");
 }
 ?>
 <!DOCTYPE html>
