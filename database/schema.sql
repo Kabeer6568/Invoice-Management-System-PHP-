@@ -1,7 +1,7 @@
 -- ============================================================
 --  Invoice Management System — Full Database Schema
 --  Ozbix IT Solutions
---  Generated: 2026-06-10
+--  Generated: 2026-06-12
 --  
 --  Run this file once on a fresh server to set up everything.
 -- ============================================================
@@ -31,9 +31,11 @@ CREATE TABLE IF NOT EXISTS clients (
     client_type    ENUM('prepaid', 'postpaid') NOT NULL DEFAULT 'postpaid',
     address        TEXT,
     notes          TEXT,
+    deleted_at     DATETIME     NULL DEFAULT NULL,
     created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_client_name  (name),
-    INDEX idx_client_email (email)
+    INDEX idx_client_name     (name),
+    INDEX idx_client_email    (email),
+    INDEX idx_client_deleted  (deleted_at)
 );
 
 -- ── Projects ──────────────────────────────────────────────────────────────────
@@ -51,12 +53,14 @@ CREATE TABLE IF NOT EXISTS projects (
     cost           DECIMAL(12,2)  DEFAULT 0.00,
     monthly_fee    DECIMAL(12,2)  DEFAULT 0.00,
     notes          TEXT,
+    deleted_at     DATETIME       NULL DEFAULT NULL,
     created_at     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
     INDEX idx_project_client     (client_id),
     INDEX idx_project_status     (status),
     INDEX idx_project_type       (project_type),
-    INDEX idx_project_department (department)
+    INDEX idx_project_department (department),
+    INDEX idx_project_deleted    (deleted_at)
 );
 
 -- ── Invoices ──────────────────────────────────────────────────────────────────
@@ -65,10 +69,10 @@ CREATE TABLE IF NOT EXISTS invoices (
     id               INT           PRIMARY KEY AUTO_INCREMENT,
     invoice_number   VARCHAR(50)   UNIQUE NOT NULL,
     client_id        INT           NOT NULL,
-    project_id       INT           DEFAULT NULL,      -- NULL = combined invoice covering multiple projects
+    project_id       INT           DEFAULT NULL,
     invoice_date     DATE          NOT NULL,
     due_date         DATE          NOT NULL,
-    amount           DECIMAL(12,2) NOT NULL,          -- subtotal before tax/discount
+    amount           DECIMAL(12,2) NOT NULL,
     tax              DECIMAL(12,2) DEFAULT 0.00,
     discount         DECIMAL(12,2) DEFAULT 0.00,
     total            DECIMAL(12,2) NOT NULL,
@@ -76,6 +80,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     remaining_amount DECIMAL(12,2) NOT NULL,
     payment_status   ENUM('Pending','Partial','Paid','Overdue') DEFAULT 'Pending',
     notes            TEXT,
+    deleted_at       DATETIME      NULL DEFAULT NULL,
     created_at       TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id)  REFERENCES clients(id),
     FOREIGN KEY (project_id) REFERENCES projects(id),
@@ -83,7 +88,8 @@ CREATE TABLE IF NOT EXISTS invoices (
     INDEX idx_invoice_client (client_id),
     INDEX idx_invoice_status (payment_status),
     INDEX idx_invoice_date   (invoice_date),
-    INDEX idx_invoice_due    (due_date)
+    INDEX idx_invoice_due    (due_date),
+    INDEX idx_invoice_deleted (deleted_at)
 );
 
 -- ── Invoice Items ─────────────────────────────────────────────────────────────
@@ -115,6 +121,16 @@ CREATE TABLE IF NOT EXISTS payments (
     INDEX idx_payment_date    (payment_date)
 );
 
+-- ── Trash Settings ────────────────────────────────────────────────────────────
+-- Stores configuration for auto-cleanup of soft-deleted items
+CREATE TABLE IF NOT EXISTS trash_settings (
+    id                  INT PRIMARY KEY AUTO_INCREMENT,
+    retention_days      INT DEFAULT 90,
+    auto_cleanup_enabled TINYINT DEFAULT 1,
+    last_cleanup        DATETIME NULL,
+    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- ── Cron Log ──────────────────────────────────────────────────────────────────
 -- Tracks pseudo-cron job runs (monthly invoice generation, overdue checks)
 CREATE TABLE IF NOT EXISTS cron_log (
@@ -138,6 +154,9 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     INDEX idx_activity_admin (admin_id),
     INDEX idx_activity_date  (created_at)
 );
+
+-- ── Insert Default Trash Settings ─────────────────────────────────────────────
+INSERT IGNORE INTO trash_settings (id, retention_days, auto_cleanup_enabled) VALUES (1, 90, 1);
 
 -- ── Default Admin ─────────────────────────────────────────────────────────────
 -- Default password: Admin@123

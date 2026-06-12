@@ -358,7 +358,14 @@ $comparison = $db->query("
                         <td>Rs.<?php echo number_format($ov['paid_amount'], 2); ?></td>
                         <td><strong>Rs.<?php echo number_format($ov['remaining_amount'], 2); ?></strong></td>
                         <td><span class="status-<?php echo strtolower($ov['payment_status']); ?>"><?php echo $ov['payment_status']; ?></span></td>
-                        <td><a href="../invoices/view.php?id=<?php echo $ov['id']; ?>">View</a></td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="../invoices/view.php?id=<?php echo $ov['id']; ?>"  class="action-btn view">
+                                    <svg  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    View
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>

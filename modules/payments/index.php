@@ -126,13 +126,27 @@ $summary = $db->query("SELECT
                 <?php while($payment = $payments->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo date('Y-m-d', strtotime($payment['payment_date'])); ?></td>
-                    <td><a href="../invoices/view.php?id=<?php echo $payment['invoice_id']; ?>"><?php echo escape($payment['invoice_number']); ?></a></td>
+                    <td>
+                        <a href="../invoices/view.php?id=<?php echo $payment['invoice_id']; ?>"  class="action-btn invoice"><?php echo escape($payment['invoice_number']); ?>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <line x1="8" y1="8" x2="16" y2="8"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                            <line x1="8" y1="16" x2="12" y2="16"/>
+                        </svg>
+                        </a>
+                    </td>
                     <td><?php echo escape($payment['client_name']); ?></td>
                     <td>Rs.<?php echo number_format($payment['amount'], 2); ?></td>
                     <td><?php echo escape($payment['payment_method']); ?></td>
                     <td><?php echo escape($payment['reference_number']); ?></td>
                     <td>
-                        <a href="?delete=<?php echo $payment['id']; ?>" onclick="return confirm('Are you sure? This will affect invoice balance!')">Delete</a>
+                        <div class="action-buttons">
+                        <a href="?delete=<?php echo $payment['id']; ?>" onclick="return confirm('Are you sure? This will affect invoice balance!')" class="action-btn delete">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                            Delete
+                        </a>
+                        </div>
                      </td>
                 </tr>
                 <?php endwhile; ?>
