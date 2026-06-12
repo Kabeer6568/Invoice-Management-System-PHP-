@@ -3,7 +3,6 @@ require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../includes/csrf.php';
 require_once '../../includes/functions.php';
-require_once '../../includes/createClientInvoice.php';
 redirectIfNotLoggedIn();
 
 $error   = '';
@@ -49,21 +48,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $project_id = $db->insert_id;
             logActivity($_SESSION['admin_id'], 'CREATE_PROJECT', "Created project: $project_name (ID: $project_id)");
 
-            // ── 2. Auto-create combined invoice for this client ───────────────
-            // Only passes the new project ID — unpaid balance is added automatically
-            $result = createClientInvoice($db, $client_id, [$project_id]);
-            $invoice_id = $result['invoice_id'] ?? 0;
+            // ── 2. Auto-create invoice for this project only ──────────────────
+            $invoice_amount = $project_type === 'Monthly' ? $monthly_fee : $cost;
+            $due_date       = date('Y-m-d', strtotime('+30 days'));
 
-            if ($result['success']) {
-                logActivity($_SESSION['admin_id'], 'CREATE_INVOICE', "Auto-created invoice: {$result['invoice_number']} for project: $project_name");
+            // Generate invoice number
+            $year_month     = date('Ym');
+            $count_result   = $db->query("SELECT COUNT(*) AS cnt FROM invoices WHERE invoice_number LIKE 'INV-{$year_month}-%'")->fetch_assoc();
+            $next_num       = str_pad($count_result['cnt'] + 1, 4, '0', STR_PAD_LEFT);
+            $invoice_number = "INV-{$year_month}-{$next_num}";
+
+            $inv_stmt = $db->prepare("
+                INSERT INTO invoices
+                    (client_id, project_id, invoice_number, invoice_date, due_date,
+                     total, paid_amount, remaining_amount, payment_status, notes)
+                VALUES (?, ?, ?, CURDATE(), ?, ?, 0, ?, 'Pending', ?)
+            ");
+            $inv_stmt->bind_param(
+                'iissdds',
+                $client_id, $project_id, $invoice_number, $due_date,
+                $invoice_amount, $invoice_amount, $notes
+            );
+
+            if ($inv_stmt->execute()) {
+                $invoice_id = $db->insert_id;
+
+                // Insert invoice line item
+                $item_stmt = $db->prepare("
+                    INSERT INTO invoice_items (invoice_id, project_id, description, amount)
+                    VALUES (?, ?, ?, ?)
+                ");
+                $item_desc = $project_name . ($project_type === 'Monthly' ? ' — Monthly Fee' : '');
+                $item_stmt->bind_param('iisd', $invoice_id, $project_id, $item_desc, $invoice_amount);
+                $item_stmt->execute();
+                $item_stmt->close();
+
+                logActivity($_SESSION['admin_id'], 'CREATE_INVOICE', "Auto-created invoice: $invoice_number for project: $project_name");
                 header("Location: create.php?success=1&invoice_id=" . $invoice_id);
                 exit();
+            } else {
+                $error = "Project created but invoice failed: " . $db->error;
             }
-            // } else {
-            //     $success = "Project created! (Invoice skipped: " . $result['message'] . ")";
-            // }
 
-            // $_POST = [];
+            $inv_stmt->close();
         } else {
             $error = "Error creating project: " . $db->error;
         }

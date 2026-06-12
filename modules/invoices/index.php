@@ -55,7 +55,7 @@ if (isset($_POST['bulk_action']) && isset($_POST['selected_invoices'])) {
 
 // Pagination
 $page   = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit  = 15;
+$limit  = 20;
 $offset = ($page - 1) * $limit;
 
 // Filters
@@ -108,7 +108,7 @@ $total_pages = ceil($total / $limit);
 
 // Get invoices
 $sql = "SELECT i.*, c.name as client_name, c.phone as client_phone,
-               COALESCE(p.project_name, '— Multiple Projects —') as project_name
+               COALESCE(p.project_name, '— Not Selected —') as project_name
         FROM invoices i
         JOIN clients c ON i.client_id = c.id
         LEFT JOIN projects p ON i.project_id = p.id
