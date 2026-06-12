@@ -101,7 +101,7 @@ $trash_count = countTrashed('clients');
                 <a href="create.php" class="btn-primary">Add New Client</a>
                 <?php if($trash_count > 0): ?>
                 <a href="../trash/?type=clients" class="btn-secondary" style="background: #6c757d;">
-                    🗑️ Trash (<?php echo $trash_count; ?>)
+                    Trash (<?php echo $trash_count; ?>)
                 </a>
                 <?php endif; ?>
             </div>

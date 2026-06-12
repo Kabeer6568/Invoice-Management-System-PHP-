@@ -197,7 +197,7 @@ $trash_count = countTrashed('invoices');
                 <a href="bulk-pdf.php" class="btn-secondary" target="_blank">Bulk PDF Download</a>
                 <?php if($trash_count > 0): ?>
                 <a href="../trash/?filter=invoices" class="btn-secondary" style="background: #6c757d;">
-                    🗑️ Trash (<?php echo $trash_count; ?>)
+                    Trash (<?php echo $trash_count; ?>)
                 </a>
                 <?php endif; ?>
             </div>
@@ -262,7 +262,6 @@ $trash_count = countTrashed('invoices');
                 <select name="bulk_action" id="bulk_action" required>
                     <option value="">Select Action</option>
                     <option value="send_whatsapp">Send via WhatsApp</option>
-                    <option value="send_reminders">Send Payment Reminders</option>
                     <option value="download_pdf">Download PDFs</option>
                     <option value="mark_paid">Mark as Paid</option>
                 </select>

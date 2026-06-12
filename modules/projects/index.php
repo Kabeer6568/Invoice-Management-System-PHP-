@@ -120,7 +120,7 @@ $trash_count = countTrashed('projects');
                 <a href="create.php" class="btn-primary">Add New Project</a>
                 <?php if($trash_count > 0): ?>
                 <a href="../trash/?filter=projects" class="btn-secondary" style="background: #6c757d;">
-                    🗑️ Trash (<?php echo $trash_count; ?>)
+                    Trash (<?php echo $trash_count; ?>)
                 </a>
                 <?php endif; ?>
             </div>
