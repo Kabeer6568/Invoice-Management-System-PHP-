@@ -22,20 +22,61 @@ $limit = 10;
 $offset = ($page - 1) * $limit;
 
 // Search
-$search = isset($_GET['search']) ? $_GET['search'] : '';
-$where = "";
+// Search
+$search = $_GET['search'] ?? '';
+$client_type = $_GET['client_type'] ?? '';
+
+$where = [];
+$params = [];
+$types = "";
+
+// search
 if ($search) {
-    $where = "WHERE name LIKE '%$search%' OR company LIKE '%$search%' OR email LIKE '%$search%'";
+    $where[] = "(name LIKE ? OR company LIKE ? OR email LIKE ? OR client_type LIKE ?)";
+    $like = "%$search%";
+    $params = array_merge($params, [$like, $like, $like, $like]);
+    $types .= "ssss";
 }
 
-// Get total records
-$total_result = $db->query("SELECT COUNT(*) as total FROM clients $where");
+// filter
+if ($client_type) {
+    $where[] = "client_type = ?";
+    $params[] = $client_type;
+    $types .= "s";
+}
+
+// build WHERE SQL
+$where_sql = "";
+if ($where) {
+    $where_sql = " WHERE " . implode(" AND ", $where);
+}
+
+$count_sql = "SELECT COUNT(*) as total FROM clients $where_sql";
+$stmt = $db->prepare($count_sql);
+
+if ($params) {
+    $stmt->bind_param($types, ...$params);
+}
+
+$stmt->execute();
+$total_result = $stmt->get_result();
 $total = $total_result->fetch_assoc()['total'];
 $total_pages = ceil($total / $limit);
 
-// Get clients
-$query = "SELECT * FROM clients $where ORDER BY id DESC LIMIT $offset, $limit";
-$clients = $db->query($query);
+$data_sql = "SELECT * FROM clients $where_sql ORDER BY id DESC LIMIT ?, ?";
+
+$stmt = $db->prepare($data_sql);
+
+// add pagination params
+$params2 = $params;
+$types2 = $types . "ii";
+$params2[] = $offset;
+$params2[] = $limit;
+
+$stmt->bind_param($types2, ...$params2);
+$stmt->execute();
+
+$clients = $stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,8 +94,16 @@ $clients = $db->query($query);
             <a href="create.php" class="btn-primary">Add New Client</a>
         </div>
         
-        <form method="GET" class="search-form">
+        <form method="GET" class="filter-form">
             <input type="text" name="search" placeholder="Search clients..." value="<?php echo escape($search); ?>">
+
+            <select name="client_type">
+                    <option value="">Client Type</option>
+                    <option value="Prepaid" <?php echo $client_type == 'Prepaid' ? 'selected' : ''; ?>>Prepaid</option>
+                    <option value="Postpaid" <?php echo $client_type == 'Postpaid'        ? 'selected' : ''; ?>>Postpaid</option>
+            </select>
+
+            
             <button type="submit">Search</button>
         </form>
         
@@ -69,6 +118,7 @@ $clients = $db->query($query);
                     <th>Company</th>
                     <th>Email</th>
                     <th>Phone</th>
+                    <th>Client Type</th>
                     <th>Projects</th>
                     <th>Balance</th>
                     <th>Actions</th>
@@ -83,6 +133,7 @@ $clients = $db->query($query);
                     <td><?php echo escape($client['company']); ?></td>
                     <td><?php echo escape($client['email']); ?></td>
                     <td><?php echo escape($client['phone']); ?></td>
+                    <td><?php echo escape($client['client_type']); ?></td>
                     <td><?php echo $summary['total_projects']; ?></td>
                     <td>Rs.<?php echo number_format($summary['pending_balance'], 2); ?></td>
                     <td>
