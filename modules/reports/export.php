@@ -32,9 +32,9 @@ $stmt->bind_param("ii", $month, $year);
 $stmt->execute();
 $summary = $stmt->get_result()->fetch_assoc();
 
-fputcsv($output, ['Total Invoiced', '$' . number_format($summary['total_invoiced'] ?? 0, 2)]);
-fputcsv($output, ['Total Received', '$' . number_format($summary['total_received'] ?? 0, 2)]);
-fputcsv($output, ['Remaining Balance', '$' . number_format($summary['remaining_balance'] ?? 0, 2)]);
+fputcsv($output, ['Total Invoiced', 'Rs.' . number_format($summary['total_invoiced'] ?? 0, 2)]);
+fputcsv($output, ['Total Received', 'Rs.' . number_format($summary['total_received'] ?? 0, 2)]);
+fputcsv($output, ['Remaining Balance', 'Rs.' . number_format($summary['remaining_balance'] ?? 0, 2)]);
 fputcsv($output, ['Total Invoices', $summary['invoice_count'] ?? 0]);
 fputcsv($output, []);
 
@@ -63,9 +63,9 @@ while($client = $clients->fetch_assoc()) {
         $client['name'],
         $client['company'],
         $client['invoice_count'],
-        '$' . number_format($client['total_invoiced'] ?? 0, 2),
-        '$' . number_format($client['total_paid'] ?? 0, 2),
-        '$' . number_format($client['balance'] ?? 0, 2)
+        'Rs.' . number_format($client['total_invoiced'] ?? 0, 2),
+        'Rs.' . number_format($client['total_paid'] ?? 0, 2),
+        'Rs.' . number_format($client['balance'] ?? 0, 2)
     ]);
 }
 fputcsv($output, []);
@@ -95,9 +95,9 @@ while($project = $projects->fetch_assoc()) {
         $project['project_name'],
         $project['department'],
         $project['invoice_count'],
-        '$' . number_format($project['total_invoiced'] ?? 0, 2),
-        '$' . number_format($project['total_paid'] ?? 0, 2),
-        '$' . number_format($project['balance'] ?? 0, 2)
+        'Rs.' . number_format($project['total_invoiced'] ?? 0, 2),
+        'Rs.' . number_format($project['total_paid'] ?? 0, 2),
+        'Rs.' . number_format($project['balance'] ?? 0, 2)
     ]);
 }
 

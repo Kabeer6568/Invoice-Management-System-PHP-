@@ -9,7 +9,6 @@ $selected_year  = isset($_GET['year'])  ? (int)$_GET['year']  : date('Y');
 $report_type    = isset($_GET['type'])  ? $_GET['type']        : 'summary';
 
 // ── Flush overdue status before running any report queries ────────────────────
-// This ensures the report always reflects the true current state
 $db->query("
     UPDATE invoices
     SET    payment_status = 'Overdue'
@@ -46,7 +45,6 @@ $stmt->execute();
 $summary = $stmt->get_result()->fetch_assoc();
 
 // ── Client-wise breakdown ─────────────────────────────────────────────────────
-// Uses client_id join — works for both single-project and combined invoices
 $stmt = $db->prepare("
     SELECT
         c.id, c.name, c.company,
@@ -67,8 +65,6 @@ $stmt->execute();
 $client_breakdown = $stmt->get_result();
 
 // ── Project-wise breakdown ────────────────────────────────────────────────────
-// For combined invoices (project_id NULL), we spread the invoice amount across
-// the client's active projects via invoice_items so nothing is lost
 $stmt = $db->prepare("
     SELECT
         p.id,
@@ -87,7 +83,6 @@ $stmt = $db->prepare("
     JOIN invoices inv     ON inv.id = ii.invoice_id
         AND MONTH(inv.invoice_date) = ?
         AND YEAR(inv.invoice_date)  = ?
-    -- get total items amount per invoice to calculate proportional paid/balance
     JOIN (
         SELECT invoice_id, SUM(amount) AS items_total
         FROM   invoice_items
@@ -102,7 +97,6 @@ $stmt->execute();
 $project_breakdown = $stmt->get_result();
 
 // ── Department-wise breakdown ─────────────────────────────────────────────────
-// Same approach — via invoice_items so combined invoices are included
 $stmt = $db->prepare("
     SELECT
         p.department,
@@ -175,8 +169,6 @@ $comparison = $db->query("
                     <?php endfor; ?>
                 </select>
 
-                
-
                 <button type="submit">Generate Report</button>
             </div>
         </form>
@@ -184,8 +176,6 @@ $comparison = $db->query("
         <div class="report-header">
             <h2>Financial Report for <?php echo date('F Y', mktime(0,0,0,$selected_month,1,$selected_year)); ?></h2>
         </div>
-
-        
 
         <!-- Summary Cards -->
         <div class="stats-grid">
@@ -341,7 +331,7 @@ $comparison = $db->query("
                     (<?php echo $outstanding->num_rows; ?> invoice<?php echo $outstanding->num_rows > 1 ? 's' : ''; ?>)
                 </small>
             </h3>
-            <table class="data-table">
+            <table class="data-table" id="outstanding-table">
                 <thead>
                     <tr>
                         <th>Invoice #</th>
@@ -355,7 +345,7 @@ $comparison = $db->query("
                         <th></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="outstanding-tbody">
                     <?php while ($ov = $outstanding->fetch_assoc()): ?>
                     <tr>
                         <td><?php echo escape($ov['invoice_number']); ?></td>
@@ -375,7 +365,6 @@ $comparison = $db->query("
                 <tfoot>
                     <tr style="font-weight:700; background:#fff5f5;">
                         <?php
-                            // Rerun query for totals since we already looped above
                             $totals = $db->query("
                                 SELECT COALESCE(SUM(total),0)            AS grand_total,
                                        COALESCE(SUM(paid_amount),0)      AS grand_paid,
@@ -392,7 +381,108 @@ $comparison = $db->query("
                     </tr>
                 </tfoot>
             </table>
+
+            <!-- Pagination controls -->
+            <div id="outstanding-pagination" style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; gap:8px;">
+                <div id="outstanding-page-info" style="font-size:13px; color:#666;"></div>
+                <div id="outstanding-page-buttons" style="display:flex; gap:4px; flex-wrap:wrap;"></div>
+            </div>
         </div>
+
+        <script>
+        (function () {
+            const ROWS_PER_PAGE = 10;
+            const tbody   = document.getElementById('outstanding-tbody');
+            const info    = document.getElementById('outstanding-page-info');
+            const buttons = document.getElementById('outstanding-page-buttons');
+            const rows    = Array.from(tbody.querySelectorAll('tr'));
+            const total   = rows.length;
+
+            // Hide pagination entirely if 10 or fewer rows
+            if (total <= ROWS_PER_PAGE) return;
+
+            const totalPages = Math.ceil(total / ROWS_PER_PAGE);
+            let currentPage  = 1;
+
+            function showPage(page) {
+                currentPage = page;
+                const start = (page - 1) * ROWS_PER_PAGE;
+                const end   = start + ROWS_PER_PAGE;
+
+                rows.forEach((row, i) => {
+                    row.style.display = (i >= start && i < end) ? '' : 'none';
+                });
+
+                // Update info text
+                info.textContent = `Showing ${start + 1}–${Math.min(end, total)} of ${total} invoices`;
+
+                // Rebuild page buttons
+                buttons.innerHTML = '';
+
+                // Prev
+                buttons.appendChild(makeBtn('← Prev', page === 1, () => showPage(page - 1)));
+
+                // Numbered pages with ellipsis
+                pageRange(page, totalPages).forEach(p => {
+                    if (p === '…') {
+                        const el = document.createElement('span');
+                        el.textContent = '…';
+                        el.style.cssText = 'padding:4px 8px; color:#888; line-height:1;';
+                        buttons.appendChild(el);
+                    } else {
+                        const btn = makeBtn(p, false, () => showPage(p));
+                        if (p === page) {
+                            btn.style.background  = '#a81e2a';
+                            btn.style.color       = '#fff';
+                            btn.style.borderColor = '#a81e2a';
+                            btn.style.fontWeight  = '700';
+                        }
+                        buttons.appendChild(btn);
+                    }
+                });
+
+                // Next
+                buttons.appendChild(makeBtn('Next →', page === totalPages, () => showPage(page + 1)));
+            }
+
+            function makeBtn(label, disabled, onClick) {
+                const btn = document.createElement('button');
+                btn.textContent = label;
+                btn.disabled    = disabled;
+                btn.style.cssText = `
+                    padding: 4px 10px;
+                    border: 1px solid #d0d0d0;
+                    background: #fff;
+                    border-radius: 4px;
+                    cursor: ${disabled ? 'not-allowed' : 'pointer'};
+                    font-size: 13px;
+                    color: ${disabled ? '#bbb' : '#333'};
+                    line-height: 1.4;
+                `;
+                if (!disabled) btn.addEventListener('click', onClick);
+                return btn;
+            }
+
+            // Returns page numbers + '…' gaps; always shows first, last, current ±1
+            function pageRange(current, total) {
+                const pages = new Set(
+                    [1, total, current, current - 1, current + 1]
+                    .filter(p => p >= 1 && p <= total)
+                );
+                const sorted = [...pages].sort((a, b) => a - b);
+                const result = [];
+                let prev = null;
+                for (const p of sorted) {
+                    if (prev !== null && p - prev > 1) result.push('…');
+                    result.push(p);
+                    prev = p;
+                }
+                return result;
+            }
+
+            showPage(1);
+        })();
+        </script>
         <?php endif; ?>
 
         <!-- Monthly Comparison -->
