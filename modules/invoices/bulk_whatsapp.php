@@ -64,8 +64,59 @@ while ($invoice = $invoices->fetch_assoc()) {
     // Generate PDF download link
     $pdf_download_link = $base_url . "/modules/invoices/pdf.php?id=" . $invoice['id'] . "&download=1";
     
+    $today = strtotime(date('Y-m-d'));
+    $dueDate = strtotime($invoice['due_date']);
+
     // Custom message based on payment status
-    if ($invoice['remaining_amount'] > 0) {
+    if ($invoice['remaining_amount'] > 0 && $dueDate < $today) {
+        $custom_message = "Dear " . $invoice['client_name'] . ",
+
+This is a friendly reminder that payment for the following invoice is still outstanding.
+
+ Invoice #: " . $invoice['invoice_number'] . "
+ Total Amount: Rs. " . number_format($invoice['total'], 2) . "
+ Paid Amount: Rs. " . number_format($invoice['paid_amount'], 2) . "
+ Remaining Balance: Rs. " . number_format($invoice['remaining_amount'], 2) . "
+ Due Date: " . date('d M Y', strtotime($invoice['due_date'])) . "
+
+ You can view and download your invoice here:
+
+" . $pdf_download_link . "
+
+We kindly request you to arrange payment at your earliest convenience. If payment has already been made, please disregard this reminder and accept our thanks.
+
+For any questions, please contact us at info@ozbix.com
+
+Best Regards,
+Ozbix IT Solutions
++92 213 2226060";
+
+    }
+    elseif ($invoice['remaining_amount'] > 0 && strtotime($invoice['invoice_date']) <= strtotime('-5 days')) {
+        $custom_message = "Dear " . $invoice['client_name'] . ",
+
+This is a friendly reminder that payment for the following invoice is still outstanding.:
+
+You can view and download your invoice here:
+
+" . $pdf_download_link . "
+
+ Invoice #: " . $invoice['invoice_number'] . "
+ Total Amount: Rs. " . number_format($invoice['total'], 2) . "
+ Paid Amount: Rs. " . number_format($invoice['paid_amount'], 2) . "
+ Remaining Balance: Rs. " . number_format($invoice['remaining_amount'], 2) . "
+ Due Date: " . date('d M Y', strtotime($invoice['due_date'])) . "
+
+We kindly request you to arrange payment at your earliest convenience. If payment has already been made, please disregard this reminder and accept our thanks.
+
+For any questions, please contact us at info@ozbix.com
+
+Best Regards,
+Ozbix IT Solutions
++92 213 2226060";
+
+    }
+    elseif ($invoice['remaining_amount'] > 0) {
         $custom_message = "Dear " . $invoice['client_name'] . ",
 
 Thank you for your business! Please find your invoice attached or download it here:
@@ -85,7 +136,8 @@ For any questions, please contact us at info@ozbix.com
 Best Regards,
 Ozbix IT Solutions
 +92 213 2226060";
-    } else {
+}
+    else {
         $custom_message = "Dear " . $invoice['client_name'] . ",
 
 Thank you for your business! Please find your invoice attached or download it here:
