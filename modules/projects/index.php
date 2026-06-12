@@ -2,16 +2,16 @@
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/soft_delete_helpers.php'; // ADD THIS
 redirectIfNotLoggedIn();
 
-// Handle deletion
+// Handle soft delete (move to trash) - UPDATED
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $id = $_GET['delete'];
-    $stmt = $db->prepare("DELETE FROM projects WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    if ($stmt->execute()) {
-        logActivity($_SESSION['admin_id'], 'DELETE_PROJECT', "Deleted project ID: $id");
-        header("Location: index.php?msg=deleted");
+    
+    if (softDelete('projects', $id)) {
+        logActivity($_SESSION['admin_id'], 'SOFT_DELETE_PROJECT', "Moved project ID: $id to trash");
+        header("Location: index.php?msg=moved_to_trash");
         exit();
     }
 }
@@ -31,6 +31,9 @@ $client_id  = isset($_GET['client'])     ? (int)$_GET['client'] : 0;
 $where  = [];
 $params = [];
 $types  = "";
+
+// ADD THIS: Always exclude deleted projects
+$where[] = "p.deleted_at IS NULL";
 
 if ($search) {
     $where[]  = "(p.project_name LIKE ? OR p.description LIKE ?)";
@@ -74,7 +77,6 @@ $total       = $stmt->get_result()->fetch_assoc()['total'];
 $total_pages = ceil($total / $limit);
 
 // Get projects — subquery gets the latest invoice payment_status per client
-// Uses client_id because auto-invoices have project_id = NULL
 $sql = "SELECT p.*,
                c.name AS client_name,
                (
@@ -97,6 +99,9 @@ $projects = $stmt->get_result();
 
 // Clients for filter dropdown
 $clients = $db->query("SELECT id, name FROM clients ORDER BY name");
+
+// Get trash count for display
+$trash_count = countTrashed('projects');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -111,7 +116,14 @@ $clients = $db->query("SELECT id, name FROM clients ORDER BY name");
     <div class="container">
         <div class="page-header">
             <h1>Manage Projects</h1>
-            <a href="create.php" class="btn-primary">Add New Project</a>
+            <div>
+                <a href="create.php" class="btn-primary">Add New Project</a>
+                <?php if($trash_count > 0): ?>
+                <a href="../trash/?filter=projects" class="btn-secondary" style="background: #6c757d;">
+                    🗑️ Trash (<?php echo $trash_count; ?>)
+                </a>
+                <?php endif; ?>
+            </div>
         </div>
 
         <form method="GET" class="filter-form">
@@ -148,7 +160,12 @@ $clients = $db->query("SELECT id, name FROM clients ORDER BY name");
         </form>
 
         <?php if (isset($_GET['msg'])): ?>
-            <div class="alert alert-success">Project deleted successfully!</div>
+            <div class="alert alert-success">
+                <?php 
+                if($_GET['msg'] == 'moved_to_trash') echo "Project moved to trash! You can restore it from the Trash page.";
+                if($_GET['msg'] == 'deleted') echo "Project deleted successfully!";
+                ?>
+            </div>
         <?php endif; ?>
 
         <table class="data-table">
@@ -188,7 +205,7 @@ $clients = $db->query("SELECT id, name FROM clients ORDER BY name");
                         <a href="view.php?id=<?php echo $project['id']; ?>">View</a>
                         <a href="edit.php?id=<?php echo $project['id']; ?>">Edit</a>
                         <a href="?delete=<?php echo $project['id']; ?>"
-                           onclick="return confirm('Are you sure? This will also delete associated invoices!')">Delete</a>
+                           onclick="return confirm('Move this project to trash? You can restore it later.')">Delete</a>
                     </td>
                 </tr>
                 <?php endwhile; ?>

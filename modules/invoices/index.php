@@ -2,12 +2,14 @@
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/soft_delete_helpers.php';
 redirectIfNotLoggedIn();
 
-// Handle deletion
+// Handle soft delete (move to trash) - UPDATED
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $id = $_GET['delete'];
     
+    // Check if has payments - if yes, prevent moving to trash
     $stmt = $db->prepare("SELECT COUNT(*) as count FROM payments WHERE invoice_id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -16,11 +18,9 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     if ($has_payments) {
         $error = "Cannot delete invoice with existing payments!";
     } else {
-        $stmt = $db->prepare("DELETE FROM invoices WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        if ($stmt->execute()) {
-            logActivity($_SESSION['admin_id'], 'DELETE_INVOICE', "Deleted invoice ID: $id");
-            header("Location: index.php?msg=deleted");
+        if (softDelete('invoices', $id)) {
+            logActivity($_SESSION['admin_id'], 'SOFT_DELETE_INVOICE', "Moved invoice ID: $id to trash");
+            header("Location: index.php?msg=moved_to_trash");
             exit();
         }
     }
@@ -35,7 +35,6 @@ if (isset($_POST['bulk_action']) && isset($_POST['selected_invoices'])) {
         $ids_string = implode(',', array_map('intval', $selected_ids));
         
         if ($bulk_action == 'send_whatsapp') {
-            // Redirect to bulk WhatsApp sending page
             header("Location: bulk_whatsapp.php?ids=" . $ids_string);
             exit();
         } elseif ($bulk_action == 'send_reminders') {
@@ -45,8 +44,7 @@ if (isset($_POST['bulk_action']) && isset($_POST['selected_invoices'])) {
             header("Location: bulk-pdf.php?ids=" . $ids_string);
             exit();
         } elseif ($bulk_action == 'mark_paid') {
-            // Mark selected invoices as paid
-            $stmt = $db->prepare("UPDATE invoices SET payment_status = 'Paid', paid_amount = total, remaining_amount = 0 WHERE id IN ($ids_string)");
+            $stmt = $db->prepare("UPDATE invoices SET payment_status = 'Paid', paid_amount = total, remaining_amount = 0 WHERE id IN ($ids_string) AND deleted_at IS NULL");
             if ($stmt->execute()) {
                 header("Location: index.php?msg=marked_paid");
                 exit();
@@ -69,6 +67,9 @@ $year   = isset($_GET['year'])   ? (int)$_GET['year']   : 0;
 $where  = [];
 $params = [];
 $types  = "";
+
+// Always exclude deleted invoices
+$where[] = "i.deleted_at IS NULL";
 
 if ($search) {
     $where[]  = "(i.invoice_number LIKE ? OR c.name LIKE ?)";
@@ -120,7 +121,10 @@ $stmt->execute();
 $invoices = $stmt->get_result();
 
 // Years for filter
-$years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices ORDER BY year DESC");
+$years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices WHERE deleted_at IS NULL ORDER BY year DESC");
+
+// Get trash count for display
+$trash_count = countTrashed('invoices');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -175,28 +179,11 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
             cursor: pointer;
         }
         
-        .btn-whatsapp-bulk {
-            background: linear-gradient(45deg, #25D366, #33C758, #4CAE4F);
-            color: white;
-        }
-        
-        .btn-reminder-bulk {
-            background: linear-gradient(45deg, #4CAE4F, #33C758, #25D366);
-            color: white;
-        }
-        
-        .btn-paid-bulk {
-            background: #28a745;
-            color: white;
-        }
-        
         .selected-count {
             background: #A81E2A;
             color: white;
             padding: 4px 12px;
-            /* border-radius: 12px; */
             font-size: 12px;
-            /* font-weight: bold; */
         }
     </style>
 </head>
@@ -208,6 +195,11 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
             <div>
                 <a href="create.php" class="btn-primary">Create Invoice</a>
                 <a href="bulk-pdf.php" class="btn-secondary" target="_blank">Bulk PDF Download</a>
+                <?php if($trash_count > 0): ?>
+                <a href="../trash/?filter=invoices" class="btn-secondary" style="background: #6c757d;">
+                    🗑️ Trash (<?php echo $trash_count; ?>)
+                </a>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -250,6 +242,7 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
         <?php if (isset($_GET['msg'])): ?>
             <div class="alert alert-success">
                 <?php 
+                if ($_GET['msg'] == 'moved_to_trash') echo "Invoice moved to trash! You can restore it from the Trash page.";
                 if ($_GET['msg'] == 'deleted') echo "Invoice deleted successfully!";
                 if ($_GET['msg'] == 'marked_paid') echo "Invoices marked as paid successfully!";
                 ?>
@@ -301,23 +294,22 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
                 </thead>
                 <tbody>
                     <?php 
-                    $counter = $offset + 1;
                     while ($invoice = $invoices->fetch_assoc()): 
                     ?>
                     <tr>
                         <td class="checkbox-col">
                             <input type="checkbox" name="selected_invoices[]" value="<?php echo $invoice['id']; ?>" 
                                    class="invoice-checkbox" onclick="updateSelectedCount()">
-                        </td>
-                        <td><?php echo escape($invoice['invoice_number']); ?></td>
-                        <td><?php echo escape($invoice['client_name']); ?></td>
-                        <td><?php echo escape($invoice['project_name']); ?></td>
-                        <td><?php echo date('Y-m-d', strtotime($invoice['invoice_date'])); ?></td>
-                        <td><?php echo date('Y-m-d', strtotime($invoice['due_date'])); ?></td>
-                        <td>Rs.<?php echo number_format($invoice['total'], 2); ?></td>
-                        <td>Rs.<?php echo number_format($invoice['paid_amount'], 2); ?></td>
-                        <td>Rs.<?php echo number_format($invoice['remaining_amount'], 2); ?></td>
-                        <td><span class="status-<?php echo strtolower($invoice['payment_status']); ?>"><?php echo escape($invoice['payment_status']); ?></span></td>
+                        </d>
+                        <td><?php echo escape($invoice['invoice_number']); ?></d>
+                        <td><?php echo escape($invoice['client_name']); ?></d>
+                        <td><?php echo escape($invoice['project_name']); ?></d>
+                        <td><?php echo date('Y-m-d', strtotime($invoice['invoice_date'])); ?></d>
+                        <td><?php echo date('Y-m-d', strtotime($invoice['due_date'])); ?></d>
+                        <td>Rs.<?php echo number_format($invoice['total'], 2); ?></d>
+                        <td>Rs.<?php echo number_format($invoice['paid_amount'], 2); ?></d>
+                        <td>Rs.<?php echo number_format($invoice['remaining_amount'], 2); ?></d>
+                        <td><span class="status-<?php echo strtolower($invoice['payment_status']); ?>"><?php echo escape($invoice['payment_status']); ?></span></d>
                         <td>
                             <a href="view.php?id=<?php echo $invoice['id']; ?>">View</a>
                             <a href="edit.php?id=<?php echo $invoice['id']; ?>">Edit</a>
@@ -325,15 +317,15 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
                             <a href="send_whatsapp.php?id=<?php echo $invoice['id']; ?>" style="color:#25D366;">Send</a>
                             <?php if ($invoice['paid_amount'] == 0): ?>
                             <a href="?delete=<?php echo $invoice['id']; ?>"
-                               onclick="return confirm('Are you sure?')">Delete</a>
+                               onclick="return confirm('Move this invoice to trash? You can restore it later.')">Delete</a>
                             <?php endif; ?>
-                        </td>
+                        </d>
                     </tr>
                     <?php endwhile; ?>
                     
                     <?php if ($invoices->num_rows == 0): ?>
                     <tr>
-                        <td colspan="12" class="text-center">No invoices found</td>
+                        <td colspan="12" class="text-center">No invoices found</d>
                     </tr>
                     <?php endif; ?>
                 </tbody>
@@ -359,10 +351,9 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
             const count = checkboxes.length;
             document.getElementById('selectedCountDisplay').innerText = count;
             
-            // Update select all checkbox state
             const allCheckboxes = document.querySelectorAll('.invoice-checkbox');
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-            if (allCheckboxes.length === count) {
+            if (allCheckboxes.length === count && count > 0) {
                 selectAllCheckbox.checked = true;
             } else {
                 selectAllCheckbox.checked = false;
@@ -424,7 +415,6 @@ $years = $db->query("SELECT DISTINCT YEAR(invoice_date) as year FROM invoices OR
             return confirm(message);
         }
         
-        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateSelectedCount();
         });

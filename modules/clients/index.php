@@ -2,16 +2,17 @@
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/soft_delete_helpers.php'; // You have this
 redirectIfNotLoggedIn();
 
-// Handle deletion
+// Handle soft delete (move to trash) - CHANGE THIS SECTION
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $id = $_GET['delete'];
-    $stmt = $db->prepare("DELETE FROM clients WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    if ($stmt->execute()) {
-        logActivity($_SESSION['admin_id'], 'DELETE_CLIENT', "Deleted client ID: $id");
-        header("Location: index.php?msg=deleted");
+    
+    // CHANGE: Use softDelete() instead of hard DELETE
+    if (softDelete('clients', $id)) {
+        logActivity($_SESSION['admin_id'], 'SOFT_DELETE_CLIENT', "Moved client ID: $id to trash");
+        header("Location: index.php?msg=moved_to_trash");
         exit();
     }
 }
@@ -22,13 +23,15 @@ $limit = 10;
 $offset = ($page - 1) * $limit;
 
 // Search
-// Search
 $search = $_GET['search'] ?? '';
 $client_type = $_GET['client_type'] ?? '';
 
 $where = [];
 $params = [];
 $types = "";
+
+// ADD THIS: Always exclude deleted clients
+$where[] = "deleted_at IS NULL";
 
 // search
 if ($search) {
@@ -77,6 +80,9 @@ $stmt->bind_param($types2, ...$params2);
 $stmt->execute();
 
 $clients = $stmt->get_result();
+
+// Get trash count using your helper function
+$trash_count = countTrashed('clients');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -91,24 +97,35 @@ $clients = $stmt->get_result();
     <div class="container">
         <div class="page-header">
             <h1>Manage Clients</h1>
-            <a href="create.php" class="btn-primary">Add New Client</a>
+            <div>
+                <a href="create.php" class="btn-primary">Add New Client</a>
+                <?php if($trash_count > 0): ?>
+                <a href="../trash/?type=clients" class="btn-secondary" style="background: #6c757d;">
+                    🗑️ Trash (<?php echo $trash_count; ?>)
+                </a>
+                <?php endif; ?>
+            </div>
         </div>
         
         <form method="GET" class="filter-form">
             <input type="text" name="search" placeholder="Search clients..." value="<?php echo escape($search); ?>">
 
             <select name="client_type">
-                    <option value="">Client Type</option>
-                    <option value="Prepaid" <?php echo $client_type == 'Prepaid' ? 'selected' : ''; ?>>Prepaid</option>
-                    <option value="Postpaid" <?php echo $client_type == 'Postpaid'        ? 'selected' : ''; ?>>Postpaid</option>
+                <option value="">Client Type</option>
+                <option value="Prepaid" <?php echo $client_type == 'Prepaid' ? 'selected' : ''; ?>>Prepaid</option>
+                <option value="Postpaid" <?php echo $client_type == 'Postpaid' ? 'selected' : ''; ?>>Postpaid</option>
             </select>
-
             
             <button type="submit">Search</button>
         </form>
         
         <?php if(isset($_GET['msg'])): ?>
-            <div class="alert alert-success">Client deleted successfully!</div>
+            <div class="alert alert-success">
+                <?php 
+                if($_GET['msg'] == 'moved_to_trash') echo "Client moved to trash! You can restore it from the Trash page.";
+                if($_GET['msg'] == 'deleted') echo "Client deleted successfully!";
+                ?>
+            </div>
         <?php endif; ?>
         
         <table class="data-table">
@@ -138,7 +155,7 @@ $clients = $stmt->get_result();
                     <td>Rs.<?php echo number_format($summary['pending_balance'], 2); ?></td>
                     <td>
                         <a href="edit.php?id=<?php echo $client['id']; ?>">Edit</a>
-                        <a href="?delete=<?php echo $client['id']; ?>" onclick="return confirm('Are you sure?')">Delete</a>
+                        <a href="?delete=<?php echo $client['id']; ?>" onclick="return confirm('Move this client to trash? You can restore it later.')">Delete</a>
                         <a href="http://localhost/invoice-management-system/modules/projects/?client=<?php echo $client['id']; ?>">View Projects</a>
                     </td>
                 </tr>
@@ -149,7 +166,7 @@ $clients = $stmt->get_result();
         <?php if($total_pages > 1): ?>
         <div class="pagination">
             <?php for($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>" class="<?php echo $i == $page ? 'active' : ''; ?>">
+                <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&client_type=<?php echo urlencode($client_type); ?>" class="<?php echo $i == $page ? 'active' : ''; ?>">
                     <?php echo $i; ?>
                 </a>
             <?php endfor; ?>

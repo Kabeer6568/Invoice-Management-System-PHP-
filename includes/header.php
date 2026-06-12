@@ -24,6 +24,7 @@ require_once __DIR__ . '/cron_monthly_invoices.php';
             <a href="http://localhost/invoice-management-system/modules/invoices/">Invoices</a>
             <a href="http://localhost/invoice-management-system/modules/payments/">Payments</a>
             <a href="http://localhost/invoice-management-system/modules/reports/monthly.php">Reports</a>
+            <a href="http://localhost/invoice-management-system/modules/trash/index.php">Trash</a>
             <a href="logout.php">Logout</a>
         </nav>
     </div>
