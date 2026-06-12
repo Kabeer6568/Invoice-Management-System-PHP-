@@ -81,20 +81,14 @@ Ozbix IT Solutions
 // Encode message for URL
 $encoded_message = urlencode($custom_message);
 
-// WhatsApp API URLs (Multiple options)
+// WhatsApp API URLs ()
 $whatsapp_urls = [
     'direct' => "https://api.whatsapp.com/send?phone=" . $phone . "&text=" . $encoded_message,
     'web' => "https://web.whatsapp.com/send?phone=" . $phone . "&text=" . $encoded_message,
     'api' => "https://wa.me/" . $phone . "?text=" . $encoded_message
 ];
 
-// For sending file via WhatsApp, we need to use WhatsApp Business API or third-party service
-// Option 1: Using WhatsApp Web with file preview (user needs to click and send file manually)
-// Option 2: Using Twilio API (paid)
-// Option 3: Using WhatsApp Business API (free but requires setup)
-// Option 4: Generate QR code for easy mobile access
 
-// For now, we'll use the direct link approach and provide file download link
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -198,7 +192,7 @@ $whatsapp_urls = [
 <body>
     <div class="whatsapp-container">
         <div class="whatsapp-header">
-            <h2>📱 Send Invoice via WhatsApp</h2>
+            <h2>Send Invoice via WhatsApp</h2>
         </div>
         
         <div class="whatsapp-body">
@@ -212,22 +206,22 @@ $whatsapp_urls = [
                 <p><strong>Remaining Amount:</strong> Rs. <?php echo number_format($invoice['remaining_amount'], 2); ?></p>
             </div>
             
-            <h3>📝 Message Preview</h3>
+            <h3>Message Preview</h3>
             <div class="message-preview">
                 <?php echo nl2br(htmlspecialchars($custom_message)); ?>
             </div>
             
             <div class="whatsapp-buttons">
                 <a href="<?php echo $whatsapp_urls['api']; ?>" target="_blank" class="btn-primary btn-whatsapp" style="display: inline-block; padding: 12px;">
-                    📱 Send via WhatsApp Mobile
+                    Send via WhatsApp Mobile
                 </a>
                 <a href="<?php echo $whatsapp_urls['web']; ?>" target="_blank" class="btn-primary btn-whatsapp" style="display: inline-block; padding: 12px;">
-                    💻 Send via WhatsApp Web
+                    Send via WhatsApp Web
                 </a>
             </div>
             
             <div class="qr-code">
-                <h3>📱 Scan to Open on Mobile</h3>
+                <h3>Scan to Open on Mobile</h3>
                 <?php
                 // Generate QR code using Google Chart API
                 $qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" . urlencode($whatsapp_urls['api']);
@@ -239,7 +233,7 @@ $whatsapp_urls = [
             </div>
             
             <div class="note">
-                <strong>ℹ️ Note:</strong> 
+                <strong> Note:</strong> 
                 After clicking the button, you will need to manually attach the PDF file. 
                 <a href="pdf.php?id=<?php echo $id; ?>&download=1" target="_blank">Click here to download the invoice PDF</a>
                 to attach it to the WhatsApp message.

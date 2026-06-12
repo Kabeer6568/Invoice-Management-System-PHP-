@@ -15,9 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Verify it works
         if (password_verify($input_password, $generated_hash)) {
-            $verify_result = '✅ SUCCESS: Hash is valid!';
+            $verify_result = ' SUCCESS: Hash is valid!';
         } else {
-            $verify_result = '❌ ERROR: Hash verification failed!';
+            $verify_result = ' ERROR: Hash verification failed!';
         }
     }
 }
@@ -127,11 +127,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <h1>🔐 Password Hash Generator</h1>
+        <h1> Password Hash Generator</h1>
         <p>Generate bcrypt password hashes for your admin users</p>
         
         <div class="info">
-            <strong>ℹ️ Info:</strong> This creates a secure bcrypt hash (60 characters) that works with PHP's password_verify()
+            <strong> Info:</strong> This creates a secure bcrypt hash (60 characters) that works with PHP's password_verify()
         </div>
         
         <form method="POST">
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <?php if ($generated_hash): ?>
             <div class="hash-box">
-                <strong>✅ Generated Hash:</strong>
+                <strong> Generated Hash:</strong>
                 <div class="hash-value" id="hashValue"><?php echo $generated_hash; ?></div>
                 <button class="copy-btn" onclick="copyToClipboard()">📋 Copy Hash</button>
                 <div class="verify-result" style="margin-top: 10px;">
@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <hr>
             
-            <h3>📦 SQL Insert Statement:</h3>
+            <h3> SQL Insert Statement:</h3>
             <div class="sql-box">
                 <pre><?php 
                 echo "INSERT INTO admins (username, password, email, full_name) VALUES (\n";
@@ -176,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <hr>
             
-            <h3>🔧 PHP Code to Use:</h3>
+            <h3> PHP Code to Use:</h3>
             <div class="sql-box">
                 <pre><?php 
                 echo "// To verify password in your login script:\n";
@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <hr>
             
-            <h3>✅ Quick SQL Command (Copy this whole line):</h3>
+            <h3> Quick SQL Command (Copy this whole line):</h3>
             <div class="sql-box">
                 <pre style="white-space: pre-wrap;">UPDATE admins SET password = '<?php echo $generated_hash; ?>' WHERE username = 'admin';</pre>
             </div>
@@ -197,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <hr>
         
-        <h3>💡 Common Passwords & Their Hashes:</h3>
+        <h3> Common Passwords & Their Hashes:</h3>
         <div class="info">
             <strong>Admin@123</strong><br>
             <code>$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi</code>
@@ -207,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         
         <div class="info">
-            <strong>⚠️ Important:</strong> Each time you generate a hash, it will be different (even for the same password) because of salt. 
+            <strong> Important:</strong> Each time you generate a hash, it will be different (even for the same password) because of salt. 
             This is normal and secure! Just use the hash you generate.
         </div>
     </div>
@@ -216,9 +216,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function copyToClipboard() {
             const hashValue = document.getElementById('hashValue').innerText;
             navigator.clipboard.writeText(hashValue).then(function() {
-                alert('✅ Hash copied to clipboard!');
+                alert(' Hash copied to clipboard!');
             }, function() {
-                alert('❌ Failed to copy. Please copy manually.');
+                alert(' Failed to copy. Please copy manually.');
             });
         }
     </script>

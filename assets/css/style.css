@@ -654,7 +654,7 @@ button:hover {
 }
 
 /* Tagline below heading */
-.sidebar-header h3::after {
+/* .sidebar-header h3::after {
     content: 'Invoice System' !important;
     display: block !important;
     font-family: 'Outfit', sans-serif !important;
@@ -664,7 +664,7 @@ button:hover {
     color: rgba(255, 255, 255, 0.22) !important;
     font-weight: 400 !important;
     margin-top: 6px !important;
-}
+} */
 
 /* ════════════════════════════════
    NAV

@@ -7,7 +7,7 @@ redirectIfNotLoggedIn();
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if (!$id) { header("Location: index.php"); exit(); }
 
-// Invoice + client info (LEFT JOIN project since combined invoices have no project_id)
+// Invoice + client info
 $stmt = $db->prepare("
     SELECT i.*,
            c.name    AS client_name,
@@ -23,6 +23,16 @@ $stmt->bind_param("i", $id);
 $stmt->execute();
 $invoice = $stmt->get_result()->fetch_assoc();
 if (!$invoice) { header("Location: index.php"); exit(); }
+
+// Check if client has other unpaid invoices for Combined PDF button
+$otherUnpaid = $db->prepare("
+    SELECT COUNT(*) as cnt FROM invoices
+    WHERE client_id = ? AND id != ? AND payment_status != 'Paid'
+");
+$otherUnpaid->bind_param('ii', $invoice['client_id'], $id);
+$otherUnpaid->execute();
+$hasOtherUnpaid = (int)$otherUnpaid->get_result()->fetch_assoc()['cnt'];
+$otherUnpaid->close();
 
 // Line items
 $liStmt = $db->prepare("SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY id ASC");
@@ -51,13 +61,20 @@ $payments = $stmt->get_result();
         <div class="page-header">
             <h1>Invoice: <?php echo escape($invoice['invoice_number']); ?></h1>
             <div>
-                <!-- Add this button with the other action buttons -->
-<a href="send_whatsapp.php?id=<?php echo $id; ?>" class="btn-whatsapp" style="background: #25D366; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 0 5px;">
-    📱 Send via WhatsApp
-</a>
+                <a href="send_whatsapp.php?id=<?php echo $id; ?>"
+                   style="background:#25D366; color:white; padding:8px 16px; text-decoration:none; border-radius:4px; display:inline-block; margin:0 5px;">
+                    Send via WhatsApp
+                </a>
                 <a href="edit.php?id=<?php echo $id; ?>" class="btn-primary">Edit Invoice</a>
                 <a href="pdf.php?id=<?php echo $id; ?>" class="btn-secondary" target="_blank">Download PDF</a>
                 <a href="../payments/add.php?invoice=<?php echo $id; ?>" class="btn-secondary">Record Payment</a>
+                <?php if ($hasOtherUnpaid > 0): ?>
+                <a href="combined-pdf.php?client_id=<?php echo $invoice['client_id']; ?>&primary_id=<?php echo $id; ?>"
+                   target="_blank"
+                   style="background:#e67e22; color:#fff; padding:8px 16px; text-decoration:none; border-radius:4px; display:inline-block; margin:0 5px;">
+                    Combined PDF (<?php echo $hasOtherUnpaid + 1; ?> invoices)
+                </a>
+                <?php endif; ?>
                 <a href="index.php" class="btn-secondary">Back</a>
             </div>
         </div>
@@ -103,7 +120,6 @@ $payments = $stmt->get_result();
             </div>
             <?php endif; ?>
 
-            <!-- ── Invoice Table ───────────────────────────────────────────── -->
             <table class="invoice-table">
                 <thead>
                     <tr>
@@ -114,23 +130,19 @@ $payments = $stmt->get_result();
                 <tbody>
 
                 <?php if (!empty($lineItems)): ?>
-                    <!-- Line items from invoice_items table -->
                     <?php foreach ($lineItems as $item): ?>
                     <tr>
                         <td><?php echo escape($item['description']); ?></td>
                         <td class="text-right">Rs.<?php echo number_format($item['amount'], 2); ?></td>
                     </tr>
                     <?php endforeach; ?>
-
                 <?php else: ?>
-                    <!-- Fallback for old invoices without line items -->
                     <tr>
                         <td><?php echo escape($invoice['project_name'] ?? 'Services'); ?></td>
                         <td class="text-right">Rs.<?php echo number_format($invoice['amount'], 2); ?></td>
                     </tr>
                 <?php endif; ?>
 
-                    <!-- Subtotal (only show if there are multiple items or adjustments) -->
                     <?php if (count($lineItems) > 1 || $invoice['tax'] > 0 || $invoice['discount'] > 0): ?>
                     <tr style="border-top:1px solid #eee; color:#666;">
                         <td>Subtotal</td>
@@ -168,7 +180,6 @@ $payments = $stmt->get_result();
                 </tbody>
             </table>
 
-            <!-- ── Payment History ────────────────────────────────────────── -->
             <?php if ($payments->num_rows > 0): ?>
             <div class="payment-history">
                 <h3>Payment History</h3>
@@ -197,7 +208,6 @@ $payments = $stmt->get_result();
             </div>
             <?php endif; ?>
 
-            <!-- ── Notes ─────────────────────────────────────────────────── -->
             <?php if ($invoice['notes']): ?>
             <div class="invoice-notes">
                 <h3>Notes:</h3>
