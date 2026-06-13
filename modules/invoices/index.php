@@ -62,7 +62,7 @@ if (isset($_POST['bulk_action']) && isset($_POST['selected_invoices'])) {
                 //            the payments page, just like a manual payment ──
                 $today  = date('Y-m-d');
                 $method = 'Bank Transfer';   // sensible default; change if needed
-                $ref    = 'BULK-PAID-' . strtoupper(date('Ymd'));
+                $ref    = 'INV-PAID-' . strtoupper(date('Ymd'));
  
                 $ins = $db->prepare(
                     "INSERT INTO payments

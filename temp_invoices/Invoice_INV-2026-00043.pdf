@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Invoice Management System</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box">
+            <img width="100%" style="filter: brightness(0);" src="https://ozbix.com/wp-content/uploads/2024/07/LOGO-BOLD-copy.webp">
+            <h2>Invoice Management System</h2>
+            
+            <h3>Admin Login</h3>
+                        <form method="POST">
+                <input type="hidden" name="csrf_token" value="8274a4815d993e0639d771bf7383639e52448b4392abfa1fc30f75e3571a4dae">                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button style="width:100%" type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
