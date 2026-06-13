@@ -549,6 +549,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      margin-top: 4px;
     }
 
     .invoice__contact-item {
@@ -795,13 +796,13 @@
       width: 24px;
       height: 24px;
       background: rgb(255 255 255);
-      border-radius: 50%;
+      border-radius: 12%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 17px;
       font-weight: 800;
-      color: #000000;
+      color: #000000a3;
       flex-shrink: 0;
       line-height: 1;
       padding: 5px;
@@ -823,7 +824,7 @@
       width: 26px;
       height: 26px;
       background: rgba(255,255,255);
-      border-radius: 50%;
+      border-radius: 12%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -883,6 +884,7 @@
         .status-paid    { background: rgba(40,167,69,0.15); padding: 5px 45px;  color: #5CB85C; border: 1px solid rgba(40,167,69,0.3); }
         .status-partial { background: rgba(23,162,184,0.15); padding: 5px 34px; color: #17A2B8; border: 1px solid rgba(23,162,184,0.3); }
         .status-overdue { background: rgba(168,30,42,.2); padding: 5px 31px;   color: var(--red); border: 1px solid rgba(168, 30, 42, .3); }
+        .status-outstanding { background: rgba(168,30,42,.2); padding: 5px 16px;   color: var(--red); border: 1px solid rgba(168, 30, 42, .3); }
 
 
         .invoice__meta-status{
@@ -893,4 +895,114 @@
             margin-top: 5px;
         }
 
-        
+        .history-section{
+          align-items: center;
+          margin: 6px 36px 24px;
+          background: var(--bg-grey);
+          border-radius: 6px;
+          padding: 14px 18px;
+        }
+
+        .bulk-counter {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 11px;
+            color: var(--ink-soft);
+            letter-spacing: 0.1em;
+        }
+
+
+        /* ══════════════════════════════════════════════════
+   COMBINED INVOICE — shared extras
+══════════════════════════════════════════════════ */
+ 
+/* Top info banner */
+.combined-banner {
+  background: #fff5f5;
+  border-left: 4px solid var(--red);
+  padding: 10px 36px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+  letter-spacing: .03em;
+}
+ 
+/* Invoice reference table */
+.invoice__refs {
+  margin: 0 36px 24px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+ 
+.invoice__refs-heading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--red);
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border);
+  background: #fdf5f5;
+}
+ 
+.invoice__refs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+ 
+.invoice__refs-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-mid);
+  padding: 8px 14px;
+  background: var(--bg-grey);
+  border-bottom: 1px solid var(--border);
+}
+ 
+.invoice__refs-table td {
+  padding: 8px 14px;
+  color: var(--text-dark);
+  border-bottom: 1px solid var(--border);
+}
+ 
+.invoice__refs-table tr:last-child td { border-bottom: none; }
+ 
+.invoice__refs-table .refs-due {
+  font-weight: 700;
+  color: var(--red);
+}
+ 
+/* Grand total — dark/charcoal variant for combined view */
+.invoice__grand-total--combined {
+  background: var(--charcoal);
+  border-radius: 6px;
+  margin: 6px 36px 24px;
+  padding: 16px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+ 
+.invoice__grand-total--combined .invoice__grand-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+}
+ 
+.invoice__grand-total--combined .invoice__grand-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+ 
+.invoice__grand-currency {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(255,255,255,.45);
+  margin-right: 4px;
+}

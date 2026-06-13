@@ -230,7 +230,7 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
 
     <div class="invoice__summary">
-      <?php if (count($lineItems) > 1 || $invoice['tax'] > 0 || $invoice['discount'] > 0): ?>
+      <?php if (count($lineItems) > 0 || $invoice['tax'] > 0 || $invoice['discount'] > 0): ?>
       <div class="invoice__summary-row">
         <span class="invoice__summary-key">Subtotal</span>
         <span class="invoice__summary-value"><?php echo number_format($invoice['amount'], 0); ?></span>
@@ -243,10 +243,7 @@ header('Content-Type: text/html; charset=utf-8');
         <span class="invoice__summary-value">&minus;<?php echo number_format($invoice['discount'], 0); ?></span>
       </div>
       <?php else: ?>
-        <div class="invoice__summary-row">
-        <span class="invoice__summary-key">Subtotal</span>
-        <span class="invoice__summary-value"><?php echo number_format($invoice['amount'], 0); ?></span>
-      </div>
+        
       <div class="invoice__summary-row">
         <span class="invoice__summary-key">You Saved</span>
         <span class="invoice__summary-value">0</span>
@@ -286,7 +283,34 @@ header('Content-Type: text/html; charset=utf-8');
     </span>
   </div>
 
+<!-- ════ PAYMENT HISTORY ════ -->
+  <?php if ($payments->num_rows > 0): ?>
+  <div class="history-section">
 
+            <h3 style="margin:20px 0 10px;">Payment History</h3>
+
+    <table class="invoice__table">
+      <thead class="invoice__table-head">
+        <tr>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Method</th>
+          <th>Reference</th>
+        </tr>
+      </thead>
+      <tbody class="invoice__table-body">
+        <?php while ($payment = $payments->fetch_assoc()): ?>
+        <tr class="invoice__tr">
+          <td class="invoice__td"><?php echo date('d M Y', strtotime($payment['payment_date'])); ?></td>
+          <td class="invoice__td">PKR <?php echo number_format($payment['amount'], 0); ?></td>
+          <td class="invoice__td"><?php echo htmlspecialchars($payment['payment_method']); ?></td>
+          <td class="invoice__td"><?php echo htmlspecialchars($payment['reference_number'] ?? '—'); ?></td>
+        </tr>
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  </div>
+  <?php endif; ?>
 
   <!-- ════ TERMS ════ -->
   <section class="invoice__terms">

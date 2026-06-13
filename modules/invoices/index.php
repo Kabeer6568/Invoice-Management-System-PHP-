@@ -25,17 +25,80 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 if (isset($_POST['bulk_action']) && isset($_POST['selected_invoices'])) {
     $selected_ids = $_POST['selected_invoices'];
     $bulk_action  = $_POST['bulk_action'];
+ 
     if (count($selected_ids) > 0) {
         $ids_string = implode(',', array_map('intval', $selected_ids));
+ 
         if ($bulk_action == 'send_whatsapp') {
             header("Location: bulk_whatsapp.php?ids=" . $ids_string); exit();
+ 
         } elseif ($bulk_action == 'send_reminders') {
             header("Location: bulk_reminders.php?ids=" . $ids_string); exit();
+ 
         } elseif ($bulk_action == 'download_pdf') {
             header("Location: bulk-pdf.php?ids=" . $ids_string); exit();
+ 
         } elseif ($bulk_action == 'mark_paid') {
-            $stmt = $db->prepare("UPDATE invoices SET payment_status = 'Paid', paid_amount = total, remaining_amount = 0 WHERE id IN ($ids_string) AND deleted_at IS NULL");
-            if ($stmt->execute()) { header("Location: index.php?msg=marked_paid"); exit(); }
+ 
+            // ── STEP 1: fetch invoices that are not already fully paid ──────
+            $fetch = $db->query(
+                "SELECT id, total, paid_amount, remaining_amount
+                 FROM   invoices
+                 WHERE  id IN ($ids_string)
+                   AND  deleted_at IS NULL
+                   AND  payment_status != 'Paid'"
+            );
+ 
+            $marked = 0;
+ 
+            while ($inv = $fetch->fetch_assoc()) {
+                $invoice_id       = (int)$inv['id'];
+                $remaining        = (float)$inv['remaining_amount'];
+ 
+                // Skip if nothing actually owed (safety guard)
+                if ($remaining <= 0) continue;
+ 
+                // ── STEP 2: insert a payment record so it appears on
+                //            the payments page, just like a manual payment ──
+                $today  = date('Y-m-d');
+                $method = 'Bank Transfer';   // sensible default; change if needed
+                $ref    = 'BULK-PAID-' . strtoupper(date('Ymd'));
+ 
+                $ins = $db->prepare(
+                    "INSERT INTO payments
+                        (invoice_id, amount, payment_date, payment_method, reference_number)
+                     VALUES (?, ?, ?, ?, ?)"
+                );
+                $ins->bind_param('idsss', $invoice_id, $remaining, $today, $method, $ref);
+                $ins->execute();
+                $ins->close();
+ 
+                // ── STEP 3: update the invoice totals & status ─────────────
+                $upd = $db->prepare(
+                    "UPDATE invoices
+                     SET    paid_amount      = total,
+                            remaining_amount = 0,
+                            payment_status   = 'Paid'
+                     WHERE  id = ?"
+                );
+                $upd->bind_param('i', $invoice_id);
+                $upd->execute();
+                $upd->close();
+ 
+                // If you have a helper that recalculates status, call it:
+                // updateInvoiceStatus($invoice_id);
+ 
+                logActivity(
+                    $_SESSION['admin_id'],
+                    'BULK_MARK_PAID',
+                    "Marked invoice ID $invoice_id as paid (bulk action); payment record inserted."
+                );
+ 
+                $marked++;
+            }
+ 
+            header("Location: index.php?msg=marked_paid&count=$marked");
+            exit();
         }
     }
 }
@@ -228,7 +291,12 @@ $trash_count = countTrashed('invoices');
                             <input type="checkbox" name="selected_invoices[]" value="<?php echo $invoice['id']; ?>"
                                    class="invoice-checkbox" onclick="updateSelectedCount()">
                         </td>
-                        <td><?php echo escape($invoice['invoice_number']); ?></td>
+                        <td>
+                            <a href="view.php?id=<?php echo $invoice['id']; ?>" class="action-btn invoice">
+                            <?php echo escape($invoice['invoice_number']); ?>
+                        </a>
+                            
+                        </td>
                         <td><?php echo escape($invoice['client_name']); ?></td>
                         <td><?php echo escape($invoice['project_name']); ?></td>
                         <td><?php echo date('Y-m-d', strtotime($invoice['invoice_date'])); ?></td>
