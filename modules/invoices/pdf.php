@@ -225,8 +225,12 @@ header('Content-Type: text/html; charset=utf-8');
     <div class="invoice__total-due">
       <p class="invoice__total-due-label">Total Due</p>
       <p class="invoice__total-due-amount">
-        <?php echo number_format($invoice['remaining_amount'], 0); ?>
-      </p>
+    <?php
+    echo ($invoice['remaining_amount'] <= 0)
+        ? 'PAID'
+        : number_format($invoice['remaining_amount'], 0);
+    ?>
+</p>
     </div>
 
     <div class="invoice__summary">
@@ -279,8 +283,12 @@ header('Content-Type: text/html; charset=utf-8');
   <div class="invoice__grand-total">
     <span class="invoice__grand-label">Total</span>
     <span class="invoice__grand-value">
-      PKR <?php echo number_format($invoice['remaining_amount'], 0); ?>
-    </span>
+    <?php
+    echo ($invoice['remaining_amount'] <= 0)
+        ? 'PAID'
+        : 'PKR ' . number_format($invoice['remaining_amount'], 0);
+    ?>
+</span>
   </div>
 
 <!-- ════ PAYMENT HISTORY ════ -->

@@ -157,21 +157,39 @@ if ($filter_type === 'all' || $filter_type === 'invoices') {
         <div class="trash-section">
             <div class="section-title">
                 <span>Deleted Clients</span>
-                <button class="empty-trash-btn"
-                        onclick="if(confirm('Permanently delete ALL clients in trash?')) window.location.href='?empty=clients'">
-                    Empty Clients Trash
-                </button>
+            </div>
+            <div class="trash-sub-heading">
+                Clients (<?php echo $trash_counts['clients']; ?>)
+                <a href="?empty=clients"
+                   class="empty-trash-link"
+                   onclick="return confirm('Permanently delete ALL invoices in trash?')">Empty Clients Only</a>
             </div>
             <?php while ($client = $clients->fetch_assoc()): ?>
             <div class="trash-item client">
                 <div class="item-info">
-                    <div class="item-title"><?php echo htmlspecialchars($client['name']); ?></div>
-                    <div class="item-details">
-                        <span>Company: <?php echo htmlspecialchars($client['company']); ?></span>
-                        <span>Email: <?php echo htmlspecialchars($client['email']); ?></span>
-                        <span>Phone: <?php echo htmlspecialchars($client['phone']); ?></span>
-                    </div>
-                </div>
+    <div class="item-title">
+        <?php echo htmlspecialchars($client['name']); ?>
+        <span class="trash-item-badge trash-item-badge--client">Client</span>
+    </div>
+
+    <div class="item-details">
+        <?php if(!empty($client['company'])): ?>
+            <span><strong>Company:</strong> <?php echo htmlspecialchars($client['company']); ?></span>
+        <?php endif; ?>
+
+        <?php if(!empty($client['email'])): ?>
+            <span><strong>Email:</strong> <?php echo htmlspecialchars($client['email']); ?></span>
+        <?php endif; ?>
+
+        <?php if(!empty($client['phone'])): ?>
+            <span><strong>Phone:</strong> <?php echo htmlspecialchars($client['phone']); ?></span>
+        <?php endif; ?>
+
+        <?php if(!empty($client['client_type'])): ?>
+            <span><strong>Type:</strong> <?php echo ucfirst($client['client_type']); ?></span>
+        <?php endif; ?>
+    </div>
+</div>
                 <div class="item-meta">
                     <div class="deleted-date">Deleted: <?php echo date('d M Y, h:i A', strtotime($client['deleted_at'])); ?></div>
                 </div>
@@ -193,20 +211,46 @@ if ($filter_type === 'all' || $filter_type === 'invoices') {
         <div class="trash-section">
             <div class="section-title">
                 <span>Deleted Projects</span>
-                <button class="empty-trash-btn"
-                        onclick="if(confirm('Permanently delete ALL projects in trash?')) window.location.href='?empty=projects'">
-                    Empty Projects Trash
-                </button>
             </div>
+
+            <div class="trash-sub-heading">
+                projects (<?php echo $trash_counts['projects']; ?>)
+                <a href="?empty=projects"
+                   class="empty-trash-link"
+                   onclick="return confirm('Permanently delete ALL invoices in trash?')">Empty Projects Only</a>
+            </div>
+
             <?php while ($project = $projects->fetch_assoc()): ?>
             <div class="trash-item project">
                 <div class="item-info">
-                    <div class="item-title"><?php echo htmlspecialchars($project['project_name']); ?></div>
-                    <div class="item-details">
-                        <span>Department: <?php echo htmlspecialchars($project['department']); ?></span>
-                        <span>Amount: Rs. <?php echo number_format($project['cost'] > 0 ? $project['cost'] : $project['monthly_fee'], 2); ?></span>
-                    </div>
-                </div>
+    <div class="item-title">
+        <?php echo htmlspecialchars($project['project_name']); ?>
+        <span class="trash-item-badge trash-item-badge--project">Project</span>
+    </div>
+
+    <div class="item-details">
+
+        <?php if(!empty($project['department'])): ?>
+            <span>
+                <strong>Department:</strong>
+                <?php echo htmlspecialchars($project['department']); ?>
+            </span>
+        <?php endif; ?>
+
+        <span>
+            <strong>Amount:</strong>
+            Rs. <?php echo number_format($project['cost'] > 0 ? $project['cost'] : $project['monthly_fee'], 2); ?>
+        </span>
+
+        <?php if(!empty($project['status'])): ?>
+            <span>
+                <strong>Status:</strong>
+                <?php echo htmlspecialchars($project['status']); ?>
+            </span>
+        <?php endif; ?>
+
+    </div>
+</div>
                 <div class="item-meta">
                     <div class="deleted-date">Deleted: <?php echo date('d M Y, h:i A', strtotime($project['deleted_at'])); ?></div>
                 </div>
@@ -248,12 +292,13 @@ if ($filter_type === 'all' || $filter_type === 'invoices') {
             <?php while ($invoice = $invoices->fetch_assoc()): ?>
             <div class="trash-item invoice">
                 <div class="item-info">
-                    <div class="item-title">Invoice #<?php echo htmlspecialchars($invoice['invoice_number']); ?></div>
+                    <div class="item-title">Invoice #<?php echo htmlspecialchars($invoice['invoice_number']); ?>
+                        <span class="trash-item-badge trash-item-badge--invoice">Invoice</span>
+                    </div>
                     <div class="item-details">
                         <span>Client ID: <?php echo $invoice['client_id']; ?></span>
                         <span>Total: Rs. <?php echo number_format($invoice['total'], 2); ?></span>
                         <span>Due: <?php echo date('d M Y', strtotime($invoice['due_date'])); ?></span>
-                        <span class="trash-item-badge trash-item-badge--invoice">Invoice</span>
                     </div>
                 </div>
                 <div class="item-meta">
@@ -297,13 +342,13 @@ if ($filter_type === 'all' || $filter_type === 'invoices') {
                 <div class="item-info">
                     <div class="item-title">
                         Payment — Invoice #<?php echo htmlspecialchars($pmt['invoice_number']); ?>
+                        <span class="trash-item-badge trash-item-badge--payment">Payment</span>
                     </div>
                     <div class="item-details">
                         <span>Client: <?php echo htmlspecialchars($pmt['client_name']); ?></span>
                         <span>Amount: Rs. <?php echo number_format($pmt['amount'], 2); ?></span>
                         <span>Method: <?php echo htmlspecialchars($pmt['payment_method']); ?></span>
                         <span>Paid on: <?php echo date('d M Y', strtotime($pmt['payment_date'])); ?></span>
-                        <span class="trash-item-badge trash-item-badge--payment">Payment</span>
                     </div>
                 </div>
                 <div class="item-meta">
@@ -337,55 +382,7 @@ if ($filter_type === 'all' || $filter_type === 'invoices') {
     </div>
 
     <style>
-        /* ── Sub-heading divider inside a section ── */
-        .trash-sub-heading {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            color: #888;
-            padding: 10px 16px 6px;
-            border-top: 1px dashed #e0e0e0;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
 
-        .trash-sub-heading:first-of-type {
-            border-top: none;
-            margin-top: 0;
-        }
-
-        .empty-trash-link {
-            font-size: 11px;
-            color: #c0392b;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .empty-trash-link:hover { text-decoration: underline; }
-
-        /* ── Type badge on each row ── */
-        .trash-item-badge {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: .05em;
-            text-transform: uppercase;
-            padding: 2px 8px;
-            border-radius: 3px;
-        }
-
-        .trash-item-badge--invoice {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .trash-item-badge--payment {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
     </style>
 </body>
 </html>

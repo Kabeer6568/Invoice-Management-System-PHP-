@@ -447,7 +447,7 @@
       margin: 40px auto;
       background: var(--bg-white);
       box-shadow: 0 2px 20px rgba(0,0,0,0.12);
-      border-radius: 6px;
+      border-radius: 2px;
       overflow: hidden;
     }
 
@@ -465,7 +465,7 @@
     .invoice__logo {
       /* white logo on transparent PNG needs a dark bg */
       background: #b41b2a;
-      border-radius: 6px;
+      border-radius: 2px;
       padding: 4px 0px;
       display: flex;
       align-items: center;
@@ -481,7 +481,7 @@
     .invoice__meta {
       background: var(--red);
       color: #fff;
-      border-radius: 100px 8px 8px 100px;
+      border-radius: 100px 0px 0px 100px;
       padding: 42px 48px 42px 48px;
       min-width: 230px;
     }
@@ -572,7 +572,7 @@
     .invoice__payment-box {
       flex: 1;
       background: var(--bg-grey);
-      border-radius: 8px;
+      border-radius: 2px;
       padding: 18px 20px;
     }
 
@@ -722,7 +722,7 @@
       align-items: center;
       margin: 6px 36px 24px;
       background: var(--bg-grey);
-      border-radius: 6px;
+      border-radius: 2px;
       padding: 14px 18px;
     }
 
