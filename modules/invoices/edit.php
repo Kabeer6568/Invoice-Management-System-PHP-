@@ -5,6 +5,9 @@ require_once '../../includes/csrf.php';
 require_once '../../includes/functions.php';
 redirectIfNotLoggedIn();
 
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if (!$id) { header("Location: index.php"); exit(); }
 
@@ -284,5 +287,7 @@ function removeRow(btn) {
 document.querySelectorAll('.item-amount').forEach(el => el.addEventListener('input', recalc));
 recalc();
 </script>
+
+<!-- <script type="text/javascript" src="../../assets/js/main.js"></script> -->
 </body>
 </html>

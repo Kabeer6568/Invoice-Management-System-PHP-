@@ -130,5 +130,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn-primary">Update Client</button>
         </form>
     </div>
+    <script type="text/javascript" src="../../assets/js/main.js"></script>
 </body>
 </html>

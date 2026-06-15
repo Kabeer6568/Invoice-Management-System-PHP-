@@ -137,5 +137,7 @@ $error = $error ?? '';
             <button type="submit" class="btn-primary">Save Client</button>
         </form>
     </div>
+
+    <script type="text/javascript" src="../../assets/js/main.js"></script>
 </body>
 </html>

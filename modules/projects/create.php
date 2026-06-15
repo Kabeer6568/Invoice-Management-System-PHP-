@@ -53,21 +53,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $due_date       = date('Y-m-d', strtotime('+30 days'));
 
             // Generate invoice number
-            $year_month     = date('Ym');
-            $count_result   = $db->query("SELECT COUNT(*) AS cnt FROM invoices WHERE invoice_number LIKE 'INV-{$year_month}-%'")->fetch_assoc();
-            $next_num       = str_pad($count_result['cnt'] + 1, 4, '0', STR_PAD_LEFT);
+            $year_month     = date('Y');
+            // $count_result   = $db->query("SELECT COUNT(*) AS cnt FROM invoices WHERE invoice_number LIKE 'INV-{$year_month}-%'")->fetch_assoc();
+            $max_result = $db->query("
+            SELECT MAX(CAST(SUBSTRING_INDEX(invoice_number, '-', -1) AS UNSIGNED)) AS max_num 
+            FROM invoices 
+            WHERE invoice_number LIKE 'INV-{$year_month}-%'
+            ")->fetch_assoc();
+            $next_num       = str_pad($max_result['max_num'] + 1, 5, '0', STR_PAD_LEFT);
             $invoice_number = "INV-{$year_month}-{$next_num}";
 
             $inv_stmt = $db->prepare("
                 INSERT INTO invoices
                     (client_id, project_id, invoice_number, invoice_date, due_date,
-                     total, paid_amount, remaining_amount, payment_status, notes)
-                VALUES (?, ?, ?, CURDATE(), ?, ?, 0, ?, 'Pending', ?)
+                    amount, total, paid_amount, remaining_amount, payment_status, notes)
+                VALUES (?, ?, ?, CURDATE(), ?, ?, ?, 0, ?, 'Pending', ?)
             ");
             $inv_stmt->bind_param(
-                'iissdds',
+                'iissddds',
                 $client_id, $project_id, $invoice_number, $due_date,
-                $invoice_amount, $invoice_amount, $notes
+                $invoice_amount, $invoice_amount, $invoice_amount, $notes
             );
 
             if ($inv_stmt->execute()) {
@@ -241,7 +246,7 @@ $error = $error ?? '';
             <button type="submit" class="btn-primary">Create Project</button>
         </form>
     </div>
-
+    <script type="text/javascript" src="../../assets/js/main.js"></script>
     <script>
         const projectType  = document.getElementById('project_type');
         const costGroup    = document.getElementById('cost_group');

@@ -12,7 +12,10 @@ $selected_client  = isset($_GET['client'])  ? (int)$_GET['client']  : 0;
 $selected_project = isset($_GET['project']) ? (int)$_GET['project'] : 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    //  var_dump($_POST); die();
     validateCSRFToken($_POST['csrf_token']);
+//     echo "CSRF passed, create_invoice=" . (isset($_POST['create_invoice']) ? 'YES' : 'NO');
+// die();
 
     if (isset($_POST['create_invoice'])) {
         $client_id    = (int)$_POST['client_id'];
@@ -232,8 +235,8 @@ if (isset($_GET['success'])) {
                 <label>Notes</label>
                 <textarea name="notes" rows="3"><?php echo isset($_POST['notes']) ? escape($_POST['notes']) : ''; ?></textarea>
             </div>
-
-            <button type="submit" name="create_invoice" class="btn-primary">Create Invoice</button>
+            <input type="hidden" name="create_invoice" value="1">                
+            <button type="submit" class="btn-primary">Create Invoice</button>
         </form>
     </div>
 
@@ -331,5 +334,7 @@ document.addEventListener('DOMContentLoaded', function () {
     recalc();
 });
 </script>
+
+<script type="text/javascript" src="../../assets/js/main.js"></script>
 </body>
 </html>

@@ -115,10 +115,12 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_method   VARCHAR(50),
     reference_number VARCHAR(100),
     notes            TEXT,
+    deleted_at       DATETIME      NULL DEFAULT NULL,
     created_at       TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
     INDEX idx_payment_invoice (invoice_id),
-    INDEX idx_payment_date    (payment_date)
+    INDEX idx_payment_date    (payment_date),
+    INDEX idx_payment_deleted (deleted_at)
 );
 
 -- ── Trash Settings ────────────────────────────────────────────────────────────
@@ -131,6 +133,8 @@ CREATE TABLE IF NOT EXISTS trash_settings (
     updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- ── Insert Default Trash Settings ─────────────────────────────────────────────
+INSERT IGNORE INTO trash_settings (id, retention_days, auto_cleanup_enabled) VALUES (1, 90, 1);
 -- ── Cron Log ──────────────────────────────────────────────────────────────────
 -- Tracks pseudo-cron job runs (monthly invoice generation, overdue checks)
 CREATE TABLE IF NOT EXISTS cron_log (
@@ -155,8 +159,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     INDEX idx_activity_date  (created_at)
 );
 
--- ── Insert Default Trash Settings ─────────────────────────────────────────────
-INSERT IGNORE INTO trash_settings (id, retention_days, auto_cleanup_enabled) VALUES (1, 90, 1);
+
 
 -- ── Default Admin ─────────────────────────────────────────────────────────────
 -- Default password: Admin@123
