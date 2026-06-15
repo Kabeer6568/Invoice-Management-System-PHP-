@@ -63,20 +63,43 @@ $payments = $stmt->get_result();
             <h1>Invoice: <?php echo escape($invoice['invoice_number']); ?></h1>
             <div>
                 <a href="send_whatsapp.php?id=<?php echo $id; ?>"
-                   style="background:#25D366; color:white; padding:8px 16px; text-decoration:none; border-radius:4px; display:inline-block; margin:0 5px;">
-                    Send via WhatsApp
-                </a>
-                <a href="edit.php?id=<?php echo $id; ?>" class="btn-primary">Edit Invoice</a>
-                <a href="pdf.php?id=<?php echo $id; ?>&token=<?php echo $token; ?>" class="btn-secondary" target="_blank">Download PDF</a>
-                <a href="../payments/add.php?invoice=<?php echo $id; ?>" class="btn-secondary">Record Payment</a>
-                <?php if ($hasOtherUnpaid > 0): ?>
-                <a href="combined-pdf.php?client_id=<?php echo $invoice['client_id']; ?>&primary_id=<?php echo $id; ?>&token=<?php echo $invoice['view_token']; ?>"
-                   target="_blank"
-                   style="background:#e67e22; color:#fff; padding:8px 16px; text-decoration:none; border-radius:4px; display:inline-block; margin:0 5px;">
-                    Combined PDF (<?php echo $hasOtherUnpaid + 1; ?> invoices)
-                </a>
-                <?php endif; ?>
-                <a href="index.php" class="btn-secondary">Back</a>
+                    style="background:#25D366; color:white; padding:8px 16px; text-decoration:none; border-radius:4px; display:inline-block; margin:0 5px;">
+                        Send via WhatsApp
+                    </a>
+
+                    <?php if ($invoice['payment_status'] != 'Paid'): ?>
+                        <a href="edit.php?id=<?php echo $id; ?>" class="btn-primary">Edit Invoice</a>
+                        <a href="../payments/add.php?invoice=<?php echo $id; ?>" class="btn-secondary">Record Payment</a>
+                    <?php endif; ?>
+
+                    <a href="pdf.php?id=<?php echo $id; ?>&token=<?php echo $token; ?>" class="btn-secondary" target="_blank">Download PDF</a>
+
+                    <?php if ($hasOtherUnpaid > 0 && $invoice['payment_status'] != 'Paid'): ?>
+                    <a href="combined-pdf.php?client_id=<?php echo $invoice['client_id']; ?>&primary_id=<?php echo $id; ?>&token=<?php echo $invoice['view_token']; ?>"
+                    target="_blank"
+                    style="background:#e67e22; color:#fff; padding:8px 16px; text-decoration:none; border-radius:4px; display:inline-block; margin:0 5px;">
+                        Combined PDF (<?php echo $hasOtherUnpaid + 1; ?> invoices)
+                    </a>
+                    <?php
+                    $combined_link = "http://" . $_SERVER['HTTP_HOST'] . "/invoice-management-system/modules/invoices/combined-pdf.php"
+                        . "?client_id=" . $invoice['client_id']
+                        . "&primary_id=" . $id
+                        . "&token=" . $invoice['view_token'];
+                    $phone = preg_replace('/[^0-9]/', '', $invoice['phone']);
+                    if (substr($phone, 0, 2) != '92' && strlen($phone) == 10) $phone = '92' . $phone;
+                    $wa_message = "Dear " . $invoice['client_name'] . ",\n\nThank you for your business!\n\n
+                    Please find your combined statement here:\n\n"
+                    . $combined_link . "
+                    \n\nBest Regards,\nOzbix IT Solutions";
+                    $wa_url = "https://wa.me/" . $phone . "?text=" . urlencode($wa_message);
+                    ?>
+                    <a href="<?php echo $wa_url; ?>" target="_blank"
+                    style="background:#25D366; color:#fff; padding:8px 16px; text-decoration:none; border-radius:4px; display:inline-block; margin:0 5px;">
+                        Send Combined via WhatsApp
+                    </a>
+                    <?php endif; ?>
+
+                    <a href="index.php" class="btn-secondary">Back</a>
             </div>
         </div>
 
