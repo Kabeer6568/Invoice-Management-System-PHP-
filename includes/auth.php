@@ -17,7 +17,7 @@ function isLoggedIn() {
 
 function redirectIfNotLoggedIn() {
     if (!isLoggedIn()) {
-        header("Location: http://localhost/invoice-management-system/login.php");
+        header("Location: ../../login.php");
         exit();
     }
 }

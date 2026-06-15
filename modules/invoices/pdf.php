@@ -1,10 +1,16 @@
 <?php
 require_once '../../config/database.php';
-require_once '../../includes/auth.php';
-redirectIfNotLoggedIn();
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if (!$id) die("Invalid invoice ID");
+
+$token = $_GET['token'] ?? '';
+if (empty($token)) die("Access denied.");
+$stmt = $db->prepare("SELECT id FROM invoices WHERE id = ? AND view_token = ?");
+$stmt->bind_param("is", $id, $token);
+$stmt->execute();
+if (!$stmt->get_result()->fetch_assoc()) die("Access denied.");
+
 
 // LEFT JOIN project since combined invoices may have no project_id
 $stmt = $db->prepare("

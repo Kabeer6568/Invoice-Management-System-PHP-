@@ -19,7 +19,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 
 // Pagination
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 10;
+$limit = 16;
 $offset = ($page - 1) * $limit;
 
 // Search

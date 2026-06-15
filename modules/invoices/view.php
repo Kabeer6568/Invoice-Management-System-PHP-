@@ -24,6 +24,7 @@ $stmt->execute();
 $invoice = $stmt->get_result()->fetch_assoc();
 if (!$invoice) { header("Location: index.php"); exit(); }
 
+$token = $invoice['view_token'] ?? '';
 // Check if client has other unpaid invoices for Combined PDF button
 $otherUnpaid = $db->prepare("
     SELECT COUNT(*) as cnt FROM invoices
@@ -66,10 +67,10 @@ $payments = $stmt->get_result();
                     Send via WhatsApp
                 </a>
                 <a href="edit.php?id=<?php echo $id; ?>" class="btn-primary">Edit Invoice</a>
-                <a href="pdf.php?id=<?php echo $id; ?>" class="btn-secondary" target="_blank">Download PDF</a>
+                <a href="pdf.php?id=<?php echo $id; ?>&token=<?php echo $token; ?>" class="btn-secondary" target="_blank">Download PDF</a>
                 <a href="../payments/add.php?invoice=<?php echo $id; ?>" class="btn-secondary">Record Payment</a>
                 <?php if ($hasOtherUnpaid > 0): ?>
-                <a href="combined-pdf.php?client_id=<?php echo $invoice['client_id']; ?>&primary_id=<?php echo $id; ?>"
+                <a href="combined-pdf.php?client_id=<?php echo $invoice['client_id']; ?>&primary_id=<?php echo $id; ?>&token=<?php echo $invoice['view_token']; ?>"
                    target="_blank"
                    style="background:#e67e22; color:#fff; padding:8px 16px; text-decoration:none; border-radius:4px; display:inline-block; margin:0 5px;">
                     Combined PDF (<?php echo $hasOtherUnpaid + 1; ?> invoices)

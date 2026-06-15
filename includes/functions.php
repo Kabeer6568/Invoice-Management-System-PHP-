@@ -94,4 +94,12 @@ function updateInvoiceStatus($invoice_id) {
     $stmt->bind_param("sdi", $status, $remaining, $invoice_id);
     $stmt->execute();
 }
+
+
+function generateViewToken() {
+    return bin2hex(random_bytes(32));
+}
+
+
+
 ?>

@@ -1,7 +1,23 @@
 <?php
 require_once '../../config/database.php';
-require_once '../../includes/auth.php';
-redirectIfNotLoggedIn();
+
+
+$token = $_GET['token'] ?? '';
+$primary_id = isset($_GET['primary_id']) ? (int)$_GET['primary_id'] : 0;
+
+if (!empty($token) && $primary_id) {
+    // Public access via token
+    $tokenCheck = $db->prepare("SELECT id FROM invoices WHERE id = ? AND view_token = ?");
+    $tokenCheck->bind_param("is", $primary_id, $token);
+    $tokenCheck->execute();
+    if (!$tokenCheck->get_result()->fetch_assoc()) die("Access denied.");
+    $tokenCheck->close();
+} else {
+    // Admin access — require login
+    require_once '../../includes/auth.php';
+    redirectIfNotLoggedIn();
+}
+
 
 // Accept either a client_id (all unpaid) or specific invoice IDs
 $client_id  = isset($_GET['client_id'])  ? (int)$_GET['client_id']  : 0;
@@ -322,7 +338,7 @@ header('Content-Type: text/html; charset=utf-8');
           <th class="invoice__th">Description</th>
           <th class="invoice__th invoice__th--center">Price</th>
           <th class="invoice__th invoice__th--center">QTY</th>
-          <th class="invoice__th invoice__th--center">Discount</th>
+          <!-- <th class="invoice__th invoice__th--center">Discount</th> -->
           <th class="invoice__th invoice__th--right">Total</th>
         </tr>
       </thead>
@@ -355,9 +371,9 @@ header('Content-Type: text/html; charset=utf-8');
           <td class="invoice__td invoice__td--center">
             <?php echo $qty; ?>
           </td>
-          <td class="invoice__td invoice__td--center">
-            <?php echo number_format($discount, 0); ?>
-          </td>
+          <!-- <td class="invoice__td invoice__td--center"> -->
+            <?php //echo number_format($discount, 0); ?>
+          <!-- </td> -->
           <td class="invoice__td invoice__td--right">
             <?php echo number_format($lineTotal, 0); ?>
           </td>

@@ -177,7 +177,7 @@ $trash_count = countTrashed('projects');
                     <th>Type</th>
                     <th>Status</th>
                     <th>Cost</th>
-                    <th>Payment Status</th>
+                    <!-- <th>Payment Status</th> -->
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -196,11 +196,11 @@ $trash_count = countTrashed('projects');
                         </span>
                     </td>
                     <td>Rs.<?php echo number_format($project['cost'] > 0 ? $project['cost'] : $project['monthly_fee'], 2); ?></td>
-                    <td>
-                        <span class="status-<?php echo strtolower($payStatus); ?>">
-                            <?php echo escape($payStatus); ?>
-                        </span>
-                    </td>
+                    <!-- <td>
+                        <span class="status-<?php //echo strtolower($payStatus); ?>"> -->
+                            <?php //echo escape($payStatus); ?>
+                        <!-- </span>
+                    </td> -->
                     <td>
                         <div class="action-buttons">
                             <a href="view.php?id=<?php echo $project['id']; ?>"  class="action-btn view">

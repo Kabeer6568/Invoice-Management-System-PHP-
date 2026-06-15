@@ -55,9 +55,9 @@ if (!file_exists($pdf_path)) {
     $pdf_content = file_get_contents($pdf_url);
     file_put_contents($pdf_path, $pdf_content);
 }
-
+$token = $invoice['view_token'] ?? '';
 // Generate PDF download link
-$pdf_download_link = "http://" . $_SERVER['HTTP_HOST'] . "/invoice-management-system/modules/invoices/pdf.php?id=" . $id . "&download=1";
+$pdf_download_link = "http://" . $_SERVER['HTTP_HOST'] . "/invoice-management-system/modules/invoices/pdf.php?id=" . $id . "&token=" . $token;;
 
 // Custom message
 $custom_message = "Dear " . $invoice['client_name'] . ",
@@ -99,7 +99,7 @@ $whatsapp_urls = [
     <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         .whatsapp-container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 50px auto;
             background: white;
             border-radius: 12px;
@@ -235,7 +235,7 @@ $whatsapp_urls = [
             <div class="note">
                 <strong> Note:</strong> 
                 After clicking the button, you will need to manually attach the PDF file. 
-                <a href="pdf.php?id=<?php echo $id; ?>&download=1" target="_blank">Click here to download the invoice PDF</a>
+                <a href="pdf.php?id=pdf.php?id=<?php echo $id; ?>&token=<?php echo $token; ?>&download=1" target="_blank">Click here to download the invoice PDF</a>
                 to attach it to the WhatsApp message.
             </div>
             

@@ -62,7 +62,7 @@ while ($invoice = $invoices->fetch_assoc()) {
     }
     
     // Generate PDF download link
-    $pdf_download_link = $base_url . "/modules/invoices/pdf.php?id=" . $invoice['id'] . "&download=1";
+    $pdf_download_link = $base_url . "/modules/invoices/pdf.php?id=" . $invoice['id'] . "&token=" . ($invoice['view_token'] ?? '');
     
     $today = strtotime(date('Y-m-d'));
     $dueDate = strtotime($invoice['due_date']);
