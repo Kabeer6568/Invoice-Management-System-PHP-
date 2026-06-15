@@ -63,6 +63,7 @@ $payments = $stmt->get_result();
             <h1>Invoice: <?php echo escape($invoice['invoice_number']); ?></h1>
             <div>
                 <a href="send_whatsapp.php?id=<?php echo $id; ?>"
+                target="_blank"
                     style="background:#25D366; color:white; padding:8px 16px; text-decoration:none; border-radius:4px; display:inline-block; margin:0 5px;">
                         Send via WhatsApp
                     </a>

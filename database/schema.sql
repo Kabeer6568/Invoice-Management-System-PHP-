@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     remaining_amount DECIMAL(12,2) NOT NULL,
     payment_status   ENUM('Pending','Partial','Paid','Overdue') DEFAULT 'Pending',
     notes            TEXT,
+    view_token       VARCHAR(64)   NULL DEFAULT NULL,
     deleted_at       DATETIME      NULL DEFAULT NULL,
     created_at       TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id)  REFERENCES clients(id),
@@ -89,6 +90,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     INDEX idx_invoice_status (payment_status),
     INDEX idx_invoice_date   (invoice_date),
     INDEX idx_invoice_due    (due_date),
+    INDEX idx_invoice_token  (view_token),
     INDEX idx_invoice_deleted (deleted_at)
 );
 

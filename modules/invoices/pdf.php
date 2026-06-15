@@ -306,19 +306,19 @@ header('Content-Type: text/html; charset=utf-8');
     <table class="invoice__table">
       <thead class="invoice__table-head">
         <tr>
-          <th>Date</th>
-          <th>Amount</th>
-          <th>Method</th>
-          <th>Reference</th>
+          <th class="invoice__th">Date</th>
+          <th class="invoice__th invoice__th--center">Amount</th>
+          <th class="invoice__th invoice__th--center">Method</th>
+          <th class="invoice__th invoice__th--right">Reference</th>
         </tr>
       </thead>
       <tbody class="invoice__table-body">
         <?php while ($payment = $payments->fetch_assoc()): ?>
         <tr class="invoice__tr">
           <td class="invoice__td"><?php echo date('d M Y', strtotime($payment['payment_date'])); ?></td>
-          <td class="invoice__td">PKR <?php echo number_format($payment['amount'], 0); ?></td>
-          <td class="invoice__td"><?php echo htmlspecialchars($payment['payment_method']); ?></td>
-          <td class="invoice__td"><?php echo htmlspecialchars($payment['reference_number'] ?? '—'); ?></td>
+          <td class="invoice__td invoice__td--center">PKR <?php echo number_format($payment['amount'], 0); ?></td>
+          <td class="invoice__td invoice__td--center"><?php echo htmlspecialchars($payment['payment_method']); ?></td>
+          <td class="invoice__td invoice__td--right"><?php echo htmlspecialchars($payment['reference_number'] ?? '—'); ?></td>
         </tr>
         <?php endwhile; ?>
       </tbody>

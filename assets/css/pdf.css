@@ -880,8 +880,8 @@
             margin-top: 0px;
         }
 
-        .status-pending { background: rgba(255,193,7,0.15); padding: 5px 33px; color: #FFC107; border: 1px solid rgba(255,193,7,0.3); }
-        .status-paid    { background: rgba(40,167,69,0.15); padding: 5px 45px;  color: #5CB85C; border: 1px solid rgba(40,167,69,0.3); }
+        .status-pending { background: rgba(255,193,7,0.15); padding: 5px 32px; color: #FFC107; border: 1px solid rgba(255,193,7,0.3); }
+        .status-paid    { background: rgba(40,167,69,0.15); padding: 5px 46px;  color: #5CB85C; border: 1px solid rgba(40,167,69,0.3); }
         .status-partial { background: rgba(23,162,184,0.15); padding: 5px 34px; color: #17A2B8; border: 1px solid rgba(23,162,184,0.3); }
         .status-overdue { background: rgba(168,30,42,.2); padding: 5px 31px;   color: var(--red); border: 1px solid rgba(168, 30, 42, .3); }
         .status-outstanding { background: rgba(168,30,42,.2); padding: 5px 16px;   color: var(--red); border: 1px solid rgba(168, 30, 42, .3); }
