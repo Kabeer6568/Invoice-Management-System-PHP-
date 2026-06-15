@@ -112,8 +112,8 @@ $trash_count = countTrashed('clients');
 
             <select name="client_type">
                 <option value="">Client Type</option>
-                <option value="Prepaid" <?php echo $client_type == 'Prepaid' ? 'selected' : ''; ?>>Prepaid</option>
-                <option value="Postpaid" <?php echo $client_type == 'Postpaid' ? 'selected' : ''; ?>>Postpaid</option>
+                <option value="before" <?php echo $client_type == 'before' ? 'selected' : ''; ?>>Before</option>
+                <option value="after" <?php echo $client_type == 'after' ? 'selected' : ''; ?>>After</option>
             </select>
             
             <button type="submit">Search</button>

@@ -115,8 +115,8 @@ $error = $error ?? '';
                     
                     <label>Client Type</label>
                     <select name="client_type" id="project_type">
-                        <option value="Prepaid">Prepaid</option>
-                        <option value="Postpaid">Postpaid</option>
+                        <option value="Before">Before</option>
+                        <option value="After">After</option>
                     </select>
                 
                 </div>

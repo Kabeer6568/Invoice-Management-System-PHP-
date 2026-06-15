@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS clients (
     contact_person VARCHAR(100),
     phone          VARCHAR(20),
     email          VARCHAR(100),
-    client_type    ENUM('prepaid', 'postpaid') NOT NULL DEFAULT 'postpaid',
+    client_type    ENUM('before', 'after') NOT NULL DEFAULT 'after',
     address        TEXT,
     notes          TEXT,
     deleted_at     DATETIME     NULL DEFAULT NULL,

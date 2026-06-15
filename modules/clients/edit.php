@@ -34,14 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contact_person = trim($_POST['contact_person']);
     $phone = trim($_POST['phone']);
     $email = trim($_POST['email']);
+    $client_type = $_POST['client_type'];
     $address = trim($_POST['address']);
     $notes = trim($_POST['notes']);
     
     if (empty($name)) {
         $error = "Client name is required!";
     } else {
-        $stmt = $db->prepare("UPDATE clients SET name=?, company=?, contact_person=?, phone=?, email=?, address=?, notes=? WHERE id=?");
-        $stmt->bind_param("sssssssi", $name, $company, $contact_person, $phone, $email, $address, $notes, $id);
+        $stmt = $db->prepare("UPDATE clients SET name=?, company=?, contact_person=?, phone=?, email=?, client_type=?, address=?, notes=? WHERE id=?");
+        $stmt->bind_param("ssssssssi", $name, $company, $contact_person, $phone, $email, $client_type, $address, $notes, $id);
+        
         
         if ($stmt->execute()) {
             logActivity($_SESSION['admin_id'], 'UPDATE_CLIENT', "Updated client: $name (ID: $id)");
@@ -114,6 +116,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" name="email" value="<?php echo escape($client['email']); ?>">
+                </div>
+                <div class="form-group">
+                    
+                    <label>Client Type</label>
+                    <select name="client_type" id="project_type">
+                        <option value="before" <?php echo $client['client_type'] == 'before' ? 'selected' : ''; ?>>Before</option>
+                        <option value="after"  <?php echo $client['client_type'] == 'after'  ? 'selected' : ''; ?>>After</option>
+                    </select>
+                
                 </div>
             </div>
             
