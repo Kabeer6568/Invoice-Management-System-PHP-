@@ -24,8 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($name)) {
         $error = "Client name is required!";
     } else {
-        $stmt = $db->prepare("INSERT INTO clients (name, company, contact_person, phone, email, client_type, address, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssssss", $name, $company, $contact_person, $phone, $email, $client_type, $address, $notes);
+        $stmt = $db->prepare("INSERT INTO clients (name, company, phone, email, client_type, address, notes) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssss", $name, $company, $phone, $email, $client_type, $address, $notes);
         
         if ($stmt->execute()) {
             $client_id = $db->insert_id;
@@ -94,27 +94,27 @@ $error = $error ?? '';
             </div>
             
             <div class="form-row">
-                <div class="form-group">
-                    <label>Contact Person</label>
-                    <input type="text" name="contact_person" value="<?php echo isset($_POST['contact_person']) ? escape($_POST['contact_person']) : ''; ?>">
-                </div>
+                
                 
                 <div class="form-group">
                     <label>Phone</label>
-                    <input type="text" name="phone" value="<?php echo isset($_POST['phone']) ? escape($_POST['phone']) : ''; ?>">
+                    <input type="text" name="phone" value="<?php echo isset($_POST['phone']) ? escape($_POST['phone']) : ''; ?>"  required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="<?php echo isset($_POST['email']) ? escape($_POST['email']) : ''; ?>"  required>
                 </div>
             </div>
             
             <div class="form-row">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" value="<?php echo isset($_POST['email']) ? escape($_POST['email']) : ''; ?>">
-                </div>
+                
 
                 <div class="form-group">
                     
                     <label>Client Type</label>
-                    <select name="client_type" id="project_type">
+                    <select name="client_type" id="project_type" required>
+                         <option value="">-- Select Type --</option>
                         <option value="Before">Before</option>
                         <option value="After">After</option>
                     </select>

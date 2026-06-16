@@ -63,16 +63,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $next_num       = str_pad($max_result['max_num'] + 1, 5, '0', STR_PAD_LEFT);
             $invoice_number = "INV-{$year_month}-{$next_num}";
 
+            $view_token = bin2hex(random_bytes(32));
+
             $inv_stmt = $db->prepare("
                 INSERT INTO invoices
                     (client_id, project_id, invoice_number, invoice_date, due_date,
-                    amount, total, paid_amount, remaining_amount, payment_status, notes)
-                VALUES (?, ?, ?, CURDATE(), ?, ?, ?, 0, ?, 'Pending', ?)
+                    amount, total, paid_amount, remaining_amount, payment_status, notes, view_token)
+                VALUES (?, ?, ?, CURDATE(), ?, ?, ?, 0, ?, 'Pending', ? , ?)
             ");
             $inv_stmt->bind_param(
-                'iissddds',
+                'iissdddss',
                 $client_id, $project_id, $invoice_number, $due_date,
-                $invoice_amount, $invoice_amount, $invoice_amount, $notes
+                $invoice_amount, $invoice_amount, $invoice_amount, $notes, $view_token
             );
 
             if ($inv_stmt->execute()) {
@@ -203,8 +205,7 @@ $error = $error ?? '';
                     <label>Payment Status</label>
                     <select name="payment_status">
                         <option value="Pending">Pending</option>
-                        <option value="Partial">Partial</option>
-                        <option value="Paid">Paid</option>
+                        
                     </select>
                 </div>
             </div>
@@ -212,7 +213,7 @@ $error = $error ?? '';
             <div class="form-row">
                 <div class="form-group">
                     <label>Start Date</label>
-                    <input type="date" name="start_date">
+                    <input type="date" name="start_date" value="<?php echo date('Y-m-d'); ?>">
                 </div>
 
                 <div class="form-group">

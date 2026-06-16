@@ -229,9 +229,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Payment Method</label>
                     <select name="payment_method">
                         <option value="Bank Transfer">Bank Transfer</option>
-                        <option value="Cash">Cash</option>
-                        <option value="Cheque">Cheque</option>
-                        <option value="Credit Card">Credit Card</option>
                     </select>
                 </div>
                 
