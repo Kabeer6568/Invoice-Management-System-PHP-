@@ -72,11 +72,11 @@ Paid Amount: Rs. " . number_format($invoice['paid_amount'], 2) . "
 Remaining Amount: Rs. " . number_format($invoice['remaining_amount'], 2) . "
 Due Date: " . date('d M Y', strtotime($invoice['due_date'])) . "
 
-For any questions, please contact us at info@ozbix.com
+For any questions, please contact us at demo@example.com
 
 Best Regards,
-Ozbix IT Solutions
-+92 213 2226060";
+Demo Company
+000-000-0000";
 
 // Encode message for URL
 $encoded_message = urlencode($custom_message);

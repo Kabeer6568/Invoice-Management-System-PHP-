@@ -40,7 +40,7 @@ header('Content-Type: text/html; charset=utf-8');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice <?php echo htmlspecialchars($invoice['invoice_number']); ?> — Ozbix IT Solutions</title>
+    <title>Invoice <?php echo htmlspecialchars($invoice['invoice_number']); ?> — Demo Company</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -62,8 +62,8 @@ header('Content-Type: text/html; charset=utf-8');
     <div class="inv-header">
         <div class="header-top">
             <div class="brand-block">
-                <div class="brand-wordmark">OZ<span>Bi</span>X</div>
-                <div class="brand-sub">Empowered by Innovation</div>
+                <div class="brand-wordmark">Demo Company</div>
+                <div class="brand-sub">Invoice Management System</div>
             </div>
             <div class="inv-label-block">
                 <div class="inv-word">Invoice</div>
@@ -119,10 +119,10 @@ header('Content-Type: text/html; charset=utf-8');
             <div>
                 <div class="section-eyebrow">Payment Details</div>
                 <div class="payment-card">
-                    <div class="payment-row"><span class="pr-label">Bank</span><span class="pr-value">Meezan Bank</span></div>
-                    <div class="payment-row"><span class="pr-label">Branch</span><span class="pr-value">Soldier Bazar Branch</span></div>
-                    <div class="payment-row"><span class="pr-label">Account Name</span><span class="pr-value">Ozbix IT Solutions</span></div>
-                    <div class="payment-row"><span class="pr-label">Account No.</span><span class="pr-value mono">01790114502628</span></div>
+                    <div class="payment-row"><span class="pr-label">Bank</span><span class="pr-value">Demo Bank</span></div>
+                    <div class="payment-row"><span class="pr-label">Branch</span><span class="pr-value">Demo Branch</span></div>
+                    <div class="payment-row"><span class="pr-label">Account Name</span><span class="pr-value">Demo Company</span></div>
+                    <div class="payment-row"><span class="pr-label">Account No.</span><span class="pr-value mono">0000000000000000 (DEMO ONLY)</span></div>
                 </div>
             </div>
         </div>
@@ -238,9 +238,9 @@ header('Content-Type: text/html; charset=utf-8');
         <!-- ── Footer ── -->
         <div class="inv-footer">
             <div class="footer-contact">
-                <div class="fc-item"><span class="fc-dot"></span>billing@ozbix.com</div>
-                <div class="fc-item"><span class="fc-dot"></span>+923-111-456-324</div>
-                <div class="fc-item"><span class="fc-dot"></span>www.ozbix.com</div>
+                <div class="fc-item"><span class="fc-dot"></span>demo@example.com</div>
+                <div class="fc-item"><span class="fc-dot"></span>000-000-0000</div>
+                <div class="fc-item"><span class="fc-dot"></span>example.com</div>
             </div>
             <div class="footer-tagline">Thank you for your business.</div>
         </div>
@@ -260,11 +260,7 @@ header('Content-Type: text/html; charset=utf-8');
   <header class="invoice__header">
 
     <div class="invoice__logo">
-      <img
-        class="invoice__logo-img"
-        src="https://ozbix.com/wp-content/uploads/2024/07/LOGO-BOLD-copy.webp"
-        alt="Ozbix – Empowered by Innovation"
-      />
+      Demo Company
     </div>
 
     <div class="invoice__meta">
@@ -305,16 +301,16 @@ header('Content-Type: text/html; charset=utf-8');
       <p class="invoice__payment-title">Payment Method</p>
       <div class="invoice__payment-grid">
         <span class="invoice__payment-key">Account No:</span>
-        <span class="invoice__payment-val">01790114502628</span>
+        <span class="invoice__payment-val">0000000000000000 (DEMO ONLY)</span>
 
         <span class="invoice__payment-key">Account Name:</span>
-        <span class="invoice__payment-val">Ozbix IT Solutions</span>
+        <span class="invoice__payment-val">Demo Company</span>
 
         <span class="invoice__payment-key">Bank Name:</span>
-        <span class="invoice__payment-val">Meezan Bank</span>
+        <span class="invoice__payment-val">Demo Bank</span>
 
         <span class="invoice__payment-key">Branch Name:</span>
-        <span class="invoice__payment-val">Soldier Bazar Branch</span>
+        <span class="invoice__payment-val">Demo Branch</span>
       </div>
     </div>
 
@@ -401,7 +397,7 @@ header('Content-Type: text/html; charset=utf-8');
         <span class="invoice__social-icon">in</span>
         <span class="invoice__social-icon">&#128386;</span>
         <span class="invoice__social-icon">f</span>
-        <span class="invoice__footer-handle">/ozbixofficial</span>
+        <span class="invoice__footer-handle">Demo Company</span>
       </div>
     </div>
 
@@ -411,7 +407,7 @@ header('Content-Type: text/html; charset=utf-8');
         <span>
           <img src="img/phone.png" alt="" class="invoice__footer-circle-icon">
         </span>
-        +923-111-456-324
+        000-000-0000
       </div>
     </div>
 
@@ -421,7 +417,7 @@ header('Content-Type: text/html; charset=utf-8');
         <span class="invoice__footer-circle-icon">
           <img src="img/website.png" alt="" class="invoice__footer-circle-icon">
         </span>
-        www.ozbix.com
+        example.com
       </div>
     </div>
 

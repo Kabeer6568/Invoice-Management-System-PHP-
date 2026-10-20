@@ -41,6 +41,14 @@ body {
     color: #333;
 }
 
+.demo-brand {
+    color: #A81E2A;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 20px;
+    text-align: center;
+}
+
 .login-box h3 {
     text-align: center;
     margin-bottom: 30px;
@@ -558,7 +566,7 @@ button:hover {
 
 
 /* ═══════════════════════════════════════════════
-   OZBIX Sidebar — Drop-in Override
+   Sidebar — Drop-in Override
    Link this AFTER your existing style.css.
    No HTML changes needed except adding the
    Google Fonts + Tabler Icons <link> tags.

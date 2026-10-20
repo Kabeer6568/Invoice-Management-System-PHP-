@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="login-page">
     <div class="login-container">
         <div class="login-box">
-            <img width="100%" style="filter: brightness(0);" src="https://ozbix.com/wp-content/uploads/2024/07/LOGO-BOLD-copy.webp">
+            <p class="demo-brand">Demo Company</p>
             <h2>Invoice Management System</h2>
             <h3>Admin Login</h3>
 

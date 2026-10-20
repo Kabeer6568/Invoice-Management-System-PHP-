@@ -85,11 +85,11 @@ This is a friendly reminder that payment for the following invoice is still outs
 
 We kindly request you to arrange payment at your earliest convenience. If payment has already been made, please disregard this reminder and accept our thanks.
 
-For any questions, please contact us at info@ozbix.com
+For any questions, please contact us at demo@example.com
 
 Best Regards,
-Ozbix IT Solutions
-+92 213 2226060";
+Demo Company
+000-000-0000";
 
     }
     elseif ($invoice['remaining_amount'] > 0 && strtotime($invoice['invoice_date']) <= strtotime('-5 days')) {
@@ -109,11 +109,11 @@ You can view and download your invoice here:
 
 We kindly request you to arrange payment at your earliest convenience. If payment has already been made, please disregard this reminder and accept our thanks.
 
-For any questions, please contact us at info@ozbix.com
+For any questions, please contact us at demo@example.com
 
 Best Regards,
-Ozbix IT Solutions
-+92 213 2226060";
+Demo Company
+000-000-0000";
 
     }
     elseif ($invoice['remaining_amount'] > 0) {
@@ -131,11 +131,11 @@ Thank you for your business! Please find your invoice attached or download it he
 
 Please make payment before the due date to avoid late fees.
 
-For any questions, please contact us at info@ozbix.com
+For any questions, please contact us at demo@example.com
 
 Best Regards,
-Ozbix IT Solutions
-+92 213 2226060";
+Demo Company
+000-000-0000";
 }
     else {
         $custom_message = "Dear " . $invoice['client_name'] . ",
@@ -151,11 +151,11 @@ Thank you for your business! Please find your invoice attached or download it he
 
 This invoice has been fully paid. Thank you for your prompt payment!
 
-For any questions, please contact us at info@ozbix.com
+For any questions, please contact us at demo@example.com
 
 Best Regards,
-Ozbix IT Solutions
-+92 213 2226060";
+Demo Company
+000-000-0000";
     }
     
     // Encode message for URL

@@ -452,7 +452,7 @@
     }
 
     /* ══════════════════════════════════════════
-       HEADER  –  logo left | meta pill right
+       HEADER  –  demo company name left | meta pill right
     ══════════════════════════════════════════ */
     .invoice__header {
       display: flex;
@@ -463,18 +463,14 @@
     }
 
     .invoice__logo {
-      /* white logo on transparent PNG needs a dark bg */
       background: #b41b2a;
       border-radius: 2px;
-      padding: 4px 0px;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      padding: 16px 20px;
       display: flex;
       align-items: center;
-    }
-
-    .invoice__logo-img {
-      height: 78px;
-      width: auto;
-      display: block;
     }
 
     /* pill badge */

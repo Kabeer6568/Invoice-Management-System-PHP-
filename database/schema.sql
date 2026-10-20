@@ -1,6 +1,6 @@
 -- ============================================================
 --  Invoice Management System — Full Database Schema
---  Ozbix IT Solutions
+--  Demo Company
 --  Generated: 2026-06-12
 --  
 --  Run this file once on a fresh server to set up everything.
@@ -167,4 +167,4 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 -- Default password: Admin@123
 -- IMPORTANT: Change this password immediately after first login
 INSERT IGNORE INTO admins (username, password, email, full_name) VALUES 
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@ozbix.com', 'Administrator');
+('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@example.com', 'Administrator');

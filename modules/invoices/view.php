@@ -91,7 +91,7 @@ $payments = $stmt->get_result();
                     $wa_message = "Dear " . $invoice['client_name'] . ",\n\nThank you for your business!\n\n
                     Please find your combined statement here:\n\n"
                     . $combined_link . "
-                    \n\nBest Regards,\nOzbix IT Solutions";
+                    \n\nBest Regards,\nDemo Company";
                     $wa_url = "https://wa.me/" . $phone . "?text=" . urlencode($wa_message);
                     ?>
                     <a href="<?php echo $wa_url; ?>" target="_blank"
@@ -107,9 +107,9 @@ $payments = $stmt->get_result();
         <div class="invoice-details">
             <div class="invoice-header">
                 <div class="company-info">
-                    <h2>Ozbix IT Solutions</h2>
-                    <p>Soldier Bazaar Garden East<br>Karachi, Sindh 74600<br>
-                    Phone: +92 213 2226060<br>Email: info@ozbix.com</p>
+                    <h2>Demo Company</h2>
+                    <p>Example Street<br>Example City<br>
+                    Phone: 000-000-0000<br>Email: demo@example.com</p>
                 </div>
                 <div class="invoice-info">
                     <h3>INVOICE</h3>

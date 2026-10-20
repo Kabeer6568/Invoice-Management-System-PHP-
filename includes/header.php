@@ -14,8 +14,7 @@ require_once __DIR__ . '/cron_monthly_invoices.php';
 <body>
     <div class="sidebar">
         <div class="sidebar-header">
-            <img style="width:100%" src="https://ozbix.com/wp-content/uploads/2024/07/LOGO-BOLD-copy.webp" >
-            <h3>Invoice System</h3>
+            <h3>Demo Company</h3>
         </div>
         <nav>
             <a href="http://localhost/invoice-management-system/dashboard.php">Dashboard</a>
