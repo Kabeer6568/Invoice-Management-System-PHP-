@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../config/app.php';
 session_start();
 
 function isLoggedIn() {
@@ -17,7 +18,7 @@ function isLoggedIn() {
 
 function redirectIfNotLoggedIn() {
     if (!isLoggedIn()) {
-        header("Location: login.php");
+        header('Location: ' . app_url('login.php'));
         exit();
     }
 }

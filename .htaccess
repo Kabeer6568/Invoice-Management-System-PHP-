@@ -1,0 +1,10 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule (^|/)\.git(?:/|$) - [F,L]
+</IfModule>
+
+<FilesMatch "(^\.|\.sql$|^README\.md$)">
+    Require all denied
+</FilesMatch>

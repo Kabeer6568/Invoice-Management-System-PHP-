@@ -40,11 +40,6 @@ if (!file_exists($temp_dir)) {
     mkdir($temp_dir, 0777, true);
 }
 
-// Get base URL
-$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-$host = $_SERVER['HTTP_HOST'];
-$base_url = $protocol . $host . '/invoice-management-system';
-
 // Process each invoice and generate WhatsApp links
 $whatsapp_links = [];
 $errors = [];
@@ -62,7 +57,10 @@ while ($invoice = $invoices->fetch_assoc()) {
     }
     
     // Generate PDF download link
-    $pdf_download_link = $base_url . "/modules/invoices/pdf.php?id=" . $invoice['id'] . "&token=" . ($invoice['view_token'] ?? '');
+    $pdf_download_link = app_absolute_url(
+        'modules/invoices/pdf.php?id=' . (int)$invoice['id']
+        . '&token=' . rawurlencode($invoice['view_token'] ?? '')
+    );
     
     $today = strtotime(date('Y-m-d'));
     $dueDate = strtotime($invoice['due_date']);

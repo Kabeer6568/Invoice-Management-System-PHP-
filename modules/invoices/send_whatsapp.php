@@ -31,38 +31,14 @@ if (substr($phone, 0, 2) != '92' && strlen($phone) == 10) {
     $phone = '92' . $phone;
 }
 
-// Generate PDF file path
-$pdf_dir = '../../temp_invoices/';
-if (!file_exists($pdf_dir)) {
-    mkdir($pdf_dir, 0777, true);
-}
-
-$pdf_filename = 'Invoice_' . $invoice['invoice_number'] . '.pdf';
-$pdf_path = $pdf_dir . $pdf_filename;
-
-// Generate PDF if not exists
-if (!file_exists($pdf_path)) {
-    // Include PDF generation function
-    ob_start();
-    include 'generate_pdf.php';
-    $pdf_html = ob_get_clean();
-    
-    // Use HTML2PDF or similar to generate PDF
-    // For now, we'll use the PDF generation from your existing pdf.php
-    $pdf_url = "http://" . $_SERVER['HTTP_HOST'] . "/invoice-management-system/modules/invoices/pdf.php?id=" . $id . "&download=1";
-    
-    // Download the PDF to temp folder
-    $pdf_content = file_get_contents($pdf_url);
-    file_put_contents($pdf_path, $pdf_content);
-}
 $token = $invoice['view_token'] ?? '';
 // Generate PDF download link
-$pdf_download_link = "http://" . $_SERVER['HTTP_HOST'] . "/invoice-management-system/modules/invoices/pdf.php?id=" . $id . "&token=" . $token;;
+$pdf_download_link = app_absolute_url('modules/invoices/pdf.php?id=' . $id . '&token=' . rawurlencode($token));
 
 // Custom message
 $custom_message = "Dear " . $invoice['client_name'] . ",
 
-Thank you for your business! Please find your invoice attached or download it here:
+Thank you for your business! You can view and print your invoice here:
 
 " . $pdf_download_link . "
 
@@ -96,7 +72,7 @@ $whatsapp_urls = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Send Invoice via WhatsApp</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(app_url('assets/css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
     <style>
         .whatsapp-container {
             max-width: 700px;

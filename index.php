@@ -1,12 +1,11 @@
 <?php
+require_once __DIR__ . '/config/app.php';
 session_start();
 
-
 if (isset($_SESSION['admin_id'])) {
-    header("Location: http://localhost/invoice-management-system/dashboard.php");
-    exit;
-} else {
-    header("Location: http://localhost/invoice-management-system/login.php");
+    header('Location: ' . app_url('dashboard.php'));
     exit;
 }
-?>
+
+header('Location: ' . app_url('login.php'));
+exit;

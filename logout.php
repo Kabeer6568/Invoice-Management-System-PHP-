@@ -1,11 +1,10 @@
 <?php
+require_once __DIR__ . '/config/app.php';
 session_start();
 
-// Remove all session data
 session_unset();
 session_destroy();
 
-// Redirect to login page
-header("Location: http://localhost/invoice-management-system/login.php");
+header('Location: ' . app_url('login.php'));
 exit;
 ?>

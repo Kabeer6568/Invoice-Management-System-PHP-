@@ -90,7 +90,7 @@ $trash_count = countTrashed('clients');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Clients</title>
-    <link rel="stylesheet" href="http://localhost/invoice-management-system/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(app_url('assets/css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
@@ -163,7 +163,7 @@ $trash_count = countTrashed('clients');
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>    
                             Delete
                         </a>
-                        <a href="http://localhost/invoice-management-system/modules/projects/?client=<?php echo $client['id']; ?>"  class="action-btn view">
+                        <a href="<?php echo app_url('modules/projects/?client=' . (int)$client['id']); ?>" class="action-btn view">
                             <svg  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             View Projects
                         </a>

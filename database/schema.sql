@@ -6,9 +6,6 @@
 --  Run this file once on a fresh server to set up everything.
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS invoice_management_system;
-USE invoice_management_system;
-
 -- ── Admins ────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS admins (
     id         INT          PRIMARY KEY AUTO_INCREMENT,
@@ -160,11 +157,3 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     INDEX idx_activity_admin (admin_id),
     INDEX idx_activity_date  (created_at)
 );
-
-
-
--- ── Default Admin ─────────────────────────────────────────────────────────────
--- Default password: Admin@123
--- IMPORTANT: Change this password immediately after first login
-INSERT IGNORE INTO admins (username, password, email, full_name) VALUES 
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@example.com', 'Administrator');

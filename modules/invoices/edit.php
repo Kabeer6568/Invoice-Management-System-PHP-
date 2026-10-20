@@ -5,9 +5,6 @@ require_once '../../includes/csrf.php';
 require_once '../../includes/functions.php';
 redirectIfNotLoggedIn();
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if (!$id) { header("Location: index.php"); exit(); }
 
@@ -134,7 +131,7 @@ $clients = $db->query("SELECT id, name, company FROM clients ORDER BY name");
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Invoice <?php echo escape($invoice['invoice_number']); ?></title>
-    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(app_url('assets/css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
     <style>
         
     </style>
