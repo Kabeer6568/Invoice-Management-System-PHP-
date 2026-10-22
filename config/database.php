@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . '/app.php';
 
@@ -16,7 +15,7 @@ class Database
         $this->host = getenv('DB_HOST') ?: '';
         $this->db_name = getenv('DB_NAME') ?: '';
         $this->username = getenv('DB_USER') ?: '';
-        $this->password = getenv('DB_PASSWORD') ?: '';
+        $this->password = getenv('DB_PASS') ?: '';
         $this->port = (int) (getenv('DB_PORT') ?: 4000);
     }
 
@@ -30,7 +29,7 @@ class Database
                 $this->password === ''
             ) {
                 throw new RuntimeException(
-                    'Database environment variables are missing.'
+                    'Required database environment variables are missing.'
                 );
             }
 
@@ -38,7 +37,11 @@ class Database
 
             $this->conn = mysqli_init();
 
-            // TiDB Cloud requires a secure TLS connection.
+            if ($this->conn === false) {
+                throw new RuntimeException('Failed to initialize MySQLi.');
+            }
+
+            // Require an encrypted connection to TiDB Cloud.
             $this->conn->ssl_set(null, null, null, null, null);
 
             $this->conn->real_connect(
@@ -56,7 +59,10 @@ class Database
         } catch (Throwable $e) {
             error_log('Database connection error: ' . $e->getMessage());
 
-            http_response_code(500);
+            if (!headers_sent()) {
+                http_response_code(500);
+            }
+
             exit('Database connection failed. Check server logs and configuration.');
         }
 
